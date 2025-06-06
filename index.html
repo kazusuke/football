@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>作戦ボード</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     body {
       background: #e2eafc;
@@ -256,9 +257,19 @@
       background: #217dbb;
     }
     @media (max-width: 900px) {
-      .main { flex-direction: column; }
+      .main { flex-direction: column; height: auto; min-height: unset; }
       .field-area, .bench-area { width: 100%; min-width: unset; }
       .bench-area { border-left: none; border-top: 3px solid #b3c6e0; }
+      .field { max-width: 98vw; }
+    }
+    @media (max-width: 600px) {
+      .player { width: 48px; height: 56px; }
+      .player-circle { width: 36px; height: 36px; font-size: 1.2em; }
+      .player-name { font-size: 0.9em; }
+      .bench-player .player-circle, .suspension-player .player-circle { font-size: 1em; }
+      .bench-player, .suspension-player { padding: 3px 0 2px 0; }
+      .bench-area { min-width: unset; padding: 8px 2px; }
+      .reset-btn { font-size: 0.95em; padding: 7px 10px; }
     }
   </style>
 </head>
@@ -354,10 +365,10 @@ const DEFAULT_SUSPENSIONS = [23, 18,20,17];
 // 4-2-3-1 ハーフピッチ用初期配置（%: x=横, y=縦）
 const FORMATION_4231 = [
   { id: 1, x: 50, y: 90 },   // GK
-  { id: 2, x: 22, y: 75 },   // RB
+  { id: 2, x: 17, y: 75 },   // RB
   { id: 3, x: 38, y: 75 },   // CB
   { id: 4, x: 62, y: 75 },   // CB
-  { id: 5, x: 78, y: 75 },   // LB
+  { id: 5, x: 83, y: 75 },   // LB
   { id: 6, x: 38, y: 52 },   // CDM
   { id: 7, x: 62, y: 52 },   // CDM
   { id: 8, x: 22, y: 35 },   // RW
@@ -478,6 +489,21 @@ function render(idx) {
     });
     suspension.appendChild(div);
   });
+
+  // --- ここから追加 ---
+  // bench-player, suspension-playerに長押しで右クリック相当
+  setTimeout(() => {
+    addLongPressContextMenu(`#bench${idx} .bench-player`, e => {
+      e.preventDefault();
+      const pid = +e.target.closest('.bench-player').getAttribute('data-id');
+      moveToSuspension(pid, idx);
+    });
+    addLongPressContextMenu(`#suspension${idx} .suspension-player`, e => {
+      e.preventDefault();
+      const pid = +e.target.closest('.suspension-player').getAttribute('data-id');
+      moveToBench(pid, idx);
+    });
+  }, 10);
 }
 
 // ドラッグデータ
@@ -604,13 +630,16 @@ function onTouchStartPlayer(e, idx) {
   const move = (ev) => {
     let x = (ev.touches[0].clientX - field.getBoundingClientRect().left - offsetX);
     let y = (ev.touches[0].clientY - field.getBoundingClientRect().top - offsetY);
-    e.target.style.left = Math.max(0, Math.min(x, field.clientWidth-70))+'px';
-    e.target.style.top = Math.max(0, Math.min(y, field.clientHeight-80))+'px';
+    e.target.style.left = Math.max(0, Math.min(x, field.clientWidth-e.target.offsetWidth))+'px';
+    e.target.style.top = Math.max(0, Math.min(y, field.clientHeight-e.target.offsetHeight))+'px';
   };
   const up = (ev) => {
     let fw = field.clientWidth, fh = field.clientHeight;
     let left = parseInt(e.target.style.left), top = parseInt(e.target.style.top);
-    states[idx-1].playerPositions[pid] = {x: (left+35)/fw*100, y: (top+40)/fh*100};
+    states[idx-1].playerPositions[pid] = {
+      x: (left+e.target.offsetWidth/2)/fw*100,
+      y: (top+e.target.offsetHeight/2)/fh*100
+    };
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
     render(idx);
@@ -634,6 +663,24 @@ function onTouchStartSuspension(e, idx) {
   const state = states[idx-1];
   state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
   render(idx);
+}
+
+// タッチ長押しで右クリック相当（控え→出場停止、出場停止→控え）
+function addLongPressContextMenu(selector, callback) {
+  document.querySelectorAll(selector).forEach(el => {
+    let timer = null;
+    el.addEventListener('touchstart', function(e) {
+      timer = setTimeout(() => {
+        callback(e);
+      }, 600); // 600ms長押し
+    }, {passive:false});
+    el.addEventListener('touchend', function() {
+      clearTimeout(timer);
+    });
+    el.addEventListener('touchmove', function() {
+      clearTimeout(timer);
+    });
+  });
 }
 
 // 右クリックで控え→出場停止
