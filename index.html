@@ -263,9 +263,9 @@
   </style>
 </head>
 <body>
-  <div class="main">
+  <div class="main" id="main1">
     <div class="field-area">
-      <div class="field" id="field">
+      <div class="field" id="field1">
         <div class="half-line"></div>
         <div class="center-semicircle"></div>
         <div class="goal-area"></div>
@@ -276,14 +276,35 @@
       </div>
     </div>
     <div class="bench-area">
-      <button class="reset-btn" onclick="movePlayersToFormation()">ピッチ内選手を初期配置に戻す</button>
+      <button class="reset-btn" onclick="movePlayersToFormation(1)">ピッチ内選手を初期配置に戻す</button>
       <div class="bench-title">控え選手</div>
-      <div class="bench-list" id="bench"></div>
+      <div class="bench-list" id="bench1"></div>
       <div class="suspension-title">出場停止</div>
-      <div class="suspension-list" id="suspension"></div>
+      <div class="suspension-list" id="suspension1"></div>
     </div>
   </div>
-  <!-- 編集用モーダル -->
+  <!-- ↓ここから下にもう1セット複製＋コピー用ボタン -->
+  <div class="main" id="main2">
+    <div class="field-area">
+      <div class="field" id="field2">
+        <div class="half-line"></div>
+        <div class="center-semicircle"></div>
+        <div class="goal-area"></div>
+        <div class="penalty-area"></div>
+        <div class="goal-line"></div>
+        <div class="goal"></div>
+      </div>
+    </div>
+    <div class="bench-area">
+      <button class="reset-btn" onclick="movePlayersToFormation(2)">ピッチ内選手を初期配置に戻す</button>
+      <button class="reset-btn" style="background:#2ecc71;margin-top:8px;" onclick="copyFromUpper()">↑上の状態をコピー</button>
+      <div class="bench-title">控え選手</div>
+      <div class="bench-list" id="bench2"></div>
+      <div class="suspension-title">出場停止</div>
+      <div class="suspension-list" id="suspension2"></div>
+    </div>
+  </div>
+  <!-- 編集用モーダルは1つでOK -->
   <div id="edit-modal">
     <div class="modal-inner">
       <h3>選手情報の編集</h3>
@@ -300,6 +321,7 @@
     </div>
   </div>
 <script>
+// --- 2面分の状態を持つ ---
 const PLAYERS = [
   { id: 1, name: '坂本', number: 1, positions: ['GK'] },
   { id: 6, name: '神門', number: 2, positions: ['RB','CM'] },
@@ -344,12 +366,21 @@ const FORMATION_4231 = [
   { id: 11, x: 50, y: 18 }   // ST
 ];
 
-let playersOnField = [...FORMATION_4231.map(p=>p.id)];
-let playerPositions = {};
-FORMATION_4231.forEach(p => playerPositions[p.id] = {x: p.x, y: p.y});
-let suspensionPlayers = [...DEFAULT_SUSPENSIONS];
+// 2面分の状態
+let states = [
+  {
+    playersOnField: [...FORMATION_4231.map(p=>p.id)],
+    playerPositions: (()=>{let o={};FORMATION_4231.forEach(p=>o[p.id]={x:p.x,y:p.y});return o;})(),
+    suspensionPlayers: [...DEFAULT_SUSPENSIONS]
+  },
+  {
+    playersOnField: [...FORMATION_4231.map(p=>p.id)],
+    playerPositions: (()=>{let o={};FORMATION_4231.forEach(p=>o[p.id]={x:p.x,y:p.y});return o;})(),
+    suspensionPlayers: [...DEFAULT_SUSPENSIONS]
+  }
+];
 
-// 編集モーダル関連
+// 編集モーダル関連（1面目のみ編集可）
 function openEditModal(pid) {
   const p = PLAYERS.find(x => x.id === pid);
   document.getElementById('edit-id').value = p.id;
@@ -369,17 +400,24 @@ document.getElementById('edit-form').onsubmit = function(e) {
   p.number = +document.getElementById('edit-number').value;
   p.positions = document.getElementById('edit-positions').value.split(',').map(s => s.trim()).filter(Boolean);
   closeEditModal();
-  render();
+  renderAll();
 };
 
-function render() {
+// 2面分描画
+function renderAll() {
+  render(1);
+  render(2);
+}
+function render(idx) {
+  // idx: 1 or 2
+  const state = states[idx-1];
   // フィールド側
-  const field = document.getElementById('field');
+  const field = document.getElementById('field'+idx);
   field.querySelectorAll('.player').forEach(e=>e.remove());
   const fw = field.clientWidth, fh = field.clientHeight;
-  playersOnField.forEach(pid=>{
+  state.playersOnField.forEach(pid=>{
     const p = PLAYERS.find(x=>x.id===pid);
-    const pos = playerPositions[pid];
+    const pos = state.playerPositions[pid];
     const div = document.createElement('div');
     div.className = 'player';
     div.setAttribute('draggable', true);
@@ -387,50 +425,56 @@ function render() {
     div.style.left = (pos.x/100*fw-35)+'px';
     div.style.top = (pos.y/100*fh-40)+'px';
     div.innerHTML = `<div class="player-circle">${p.number}</div><div class="player-name">${p.name}</div>`;
-    div.addEventListener('dragstart', onDragStartPlayer);
-    div.addEventListener('dragend', onDragEndPlayer);
-    div.addEventListener('touchstart', onTouchStartPlayer, {passive:false});
+    div.addEventListener('dragstart', e=>onDragStartPlayer(e, idx));
+    div.addEventListener('dragend', e=>onDragEndPlayer(e, idx));
+    div.addEventListener('touchstart', e=>onTouchStartPlayer(e, idx), {passive:false});
+    // 編集は1面目のみ
+    if(idx===1) {
+      div.querySelector('.player-name').style.cursor = "pointer";
+      div.querySelector('.player-name').style.textDecoration = "underline dotted";
+      div.querySelector('.player-name').onclick = ()=>openEditModal(pid);
+    }
     field.appendChild(div);
   });
 
   // 控え側
-  const bench = document.getElementById('bench');
+  const bench = document.getElementById('bench'+idx);
   bench.innerHTML = '';
-  PLAYERS.filter(p=>!playersOnField.includes(p.id) && !suspensionPlayers.includes(p.id)).forEach(p=>{
+  PLAYERS.filter(p=>!state.playersOnField.includes(p.id) && !state.suspensionPlayers.includes(p.id)).forEach(p=>{
     const div = document.createElement('div');
     div.className = 'bench-player';
     div.setAttribute('draggable', true);
     div.setAttribute('data-id', p.id);
     div.innerHTML = `<div class="player-circle">${p.number}</div>
-      <div class="player-name" style="cursor:pointer; text-decoration:underline dotted;" onclick="openEditModal(${p.id})">${p.name}</div>`;
-    div.addEventListener('dragstart', onDragStartBench);
-    div.addEventListener('dragend', onDragEndBench);
-    div.addEventListener('touchstart', onTouchStartBench, {passive:false});
+      <div class="player-name"${idx===1?' style="cursor:pointer; text-decoration:underline dotted;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
+    div.addEventListener('dragstart', e=>onDragStartBench(e, idx));
+    div.addEventListener('dragend', e=>onDragEndBench(e, idx));
+    div.addEventListener('touchstart', e=>onTouchStartBench(e, idx), {passive:false});
     // 右クリックで出場停止
     div.addEventListener('contextmenu', e=>{
       e.preventDefault();
-      moveToSuspension(p.id);
+      moveToSuspension(p.id, idx);
     });
     bench.appendChild(div);
   });
 
   // 出場停止
-  const suspension = document.getElementById('suspension');
+  const suspension = document.getElementById('suspension'+idx);
   suspension.innerHTML = '';
-  PLAYERS.filter(p=>suspensionPlayers.includes(p.id)).forEach(p=>{
+  PLAYERS.filter(p=>state.suspensionPlayers.includes(p.id)).forEach(p=>{
     const div = document.createElement('div');
     div.className = 'suspension-player';
     div.setAttribute('draggable', true);
     div.setAttribute('data-id', p.id);
     div.innerHTML = `<div class="player-circle">${p.number}</div>
-      <div class="player-name" style="cursor:pointer; text-decoration:underline dotted;" onclick="openEditModal(${p.id})">${p.name}</div>`;
-    div.addEventListener('dragstart', onDragStartSuspension);
-    div.addEventListener('dragend', onDragEndSuspension);
-    div.addEventListener('touchstart', onTouchStartSuspension, {passive:false});
+      <div class="player-name"${idx===1?' style="cursor:pointer; text-decoration:underline dotted;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
+    div.addEventListener('dragstart', e=>onDragStartSuspension(e, idx));
+    div.addEventListener('dragend', e=>onDragEndSuspension(e, idx));
+    div.addEventListener('touchstart', e=>onTouchStartSuspension(e, idx), {passive:false});
     // 右クリックで控えに戻す
     div.addEventListener('contextmenu', e=>{
       e.preventDefault();
-      moveToBench(p.id);
+      moveToBench(p.id, idx);
     });
     suspension.appendChild(div);
   });
@@ -441,184 +485,199 @@ let dragPlayerId = null;
 let dragFrom = null;
 
 // フィールド上の選手ドラッグ
-function onDragStartPlayer(e) {
-  dragPlayerId = +this.getAttribute('data-id');
+function onDragStartPlayer(e, idx) {
+  dragPlayerId = +e.target.getAttribute('data-id');
   dragFrom = 'field';
-  this.classList.add('dragging');
-  document.getElementById('field').addEventListener('dragover', onDragOverField);
-  document.getElementById('field').addEventListener('drop', onDropField);
-  document.getElementById('bench').addEventListener('dragover', onDragOverBench);
-  document.getElementById('bench').addEventListener('drop', onDropBench);
-  document.getElementById('suspension').addEventListener('dragover', onDragOverSuspension);
-  document.getElementById('suspension').addEventListener('drop', onDropSuspension);
+  e.target.classList.add('dragging');
+  document.getElementById('field'+idx).addEventListener('dragover', ev=>onDragOverField(ev, idx));
+  document.getElementById('field'+idx).addEventListener('drop', ev=>onDropField(ev, idx));
+  document.getElementById('bench'+idx).addEventListener('dragover', ev=>onDragOverBench(ev, idx));
+  document.getElementById('bench'+idx).addEventListener('drop', ev=>onDropBench(ev, idx));
+  document.getElementById('suspension'+idx).addEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
+  document.getElementById('suspension'+idx).addEventListener('drop', ev=>onDropSuspension(ev, idx));
 }
-function onDragEndPlayer(e) {
-  this.classList.remove('dragging');
-  document.getElementById('field').removeEventListener('dragover', onDragOverField);
-  document.getElementById('field').removeEventListener('drop', onDropField);
-  document.getElementById('bench').removeEventListener('dragover', onDragOverBench);
-  document.getElementById('bench').removeEventListener('drop', onDropBench);
-  document.getElementById('suspension').removeEventListener('dragover', onDragOverSuspension);
-  document.getElementById('suspension').removeEventListener('drop', onDropSuspension);
+function onDragEndPlayer(e, idx) {
+  e.target.classList.remove('dragging');
+  document.getElementById('field'+idx).removeEventListener('dragover', ev=>onDragOverField(ev, idx));
+  document.getElementById('field'+idx).removeEventListener('drop', ev=>onDropField(ev, idx));
+  document.getElementById('bench'+idx).removeEventListener('dragover', ev=>onDragOverBench(ev, idx));
+  document.getElementById('bench'+idx).removeEventListener('drop', ev=>onDropBench(ev, idx));
+  document.getElementById('suspension'+idx).removeEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
+  document.getElementById('suspension'+idx).removeEventListener('drop', ev=>onDropSuspension(ev, idx));
   dragPlayerId = null;
   dragFrom = null;
 }
 
 // 控え選手ドラッグ
-function onDragStartBench(e) {
-  dragPlayerId = +this.getAttribute('data-id');
+function onDragStartBench(e, idx) {
+  dragPlayerId = +e.target.getAttribute('data-id');
   dragFrom = 'bench';
-  this.classList.add('dragging');
-  document.getElementById('field').addEventListener('dragover', onDragOverField);
-  document.getElementById('field').addEventListener('drop', onDropField);
-  document.getElementById('bench').addEventListener('dragover', onDragOverBench);
-  document.getElementById('bench').addEventListener('drop', onDropBench);
-  document.getElementById('suspension').addEventListener('dragover', onDragOverSuspension);
-  document.getElementById('suspension').addEventListener('drop', onDropSuspension);
+  e.target.classList.add('dragging');
+  document.getElementById('field'+idx).addEventListener('dragover', ev=>onDragOverField(ev, idx));
+  document.getElementById('field'+idx).addEventListener('drop', ev=>onDropField(ev, idx));
+  document.getElementById('bench'+idx).addEventListener('dragover', ev=>onDragOverBench(ev, idx));
+  document.getElementById('bench'+idx).addEventListener('drop', ev=>onDropBench(ev, idx));
+  document.getElementById('suspension'+idx).addEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
+  document.getElementById('suspension'+idx).addEventListener('drop', ev=>onDropSuspension(ev, idx));
 }
-function onDragEndBench(e) {
-  this.classList.remove('dragging');
-  document.getElementById('field').removeEventListener('dragover', onDragOverField);
-  document.getElementById('field').removeEventListener('drop', onDropField);
-  document.getElementById('bench').removeEventListener('dragover', onDragOverBench);
-  document.getElementById('bench').removeEventListener('drop', onDropBench);
-  document.getElementById('suspension').removeEventListener('dragover', onDragOverSuspension);
-  document.getElementById('suspension').removeEventListener('drop', onDropSuspension);
+function onDragEndBench(e, idx) {
+  e.target.classList.remove('dragging');
+  document.getElementById('field'+idx).removeEventListener('dragover', ev=>onDragOverField(ev, idx));
+  document.getElementById('field'+idx).removeEventListener('drop', ev=>onDropField(ev, idx));
+  document.getElementById('bench'+idx).removeEventListener('dragover', ev=>onDragOverBench(ev, idx));
+  document.getElementById('bench'+idx).removeEventListener('drop', ev=>onDropBench(ev, idx));
+  document.getElementById('suspension'+idx).removeEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
+  document.getElementById('suspension'+idx).removeEventListener('drop', ev=>onDropSuspension(ev, idx));
   dragPlayerId = null;
   dragFrom = null;
 }
 
 // 出場停止選手ドラッグ
-function onDragStartSuspension(e) {
-  dragPlayerId = +this.getAttribute('data-id');
+function onDragStartSuspension(e, idx) {
+  dragPlayerId = +e.target.getAttribute('data-id');
   dragFrom = 'suspension';
-  this.classList.add('dragging');
-  document.getElementById('bench').addEventListener('dragover', onDragOverBench);
-  document.getElementById('bench').addEventListener('drop', onDropBench);
+  e.target.classList.add('dragging');
+  document.getElementById('bench'+idx).addEventListener('dragover', ev=>onDragOverBench(ev, idx));
+  document.getElementById('bench'+idx).addEventListener('drop', ev=>onDropBench(ev, idx));
 }
-function onDragEndSuspension(e) {
-  this.classList.remove('dragging');
-  document.getElementById('bench').removeEventListener('dragover', onDragOverBench);
-  document.getElementById('bench').removeEventListener('drop', onDropBench);
+function onDragEndSuspension(e, idx) {
+  e.target.classList.remove('dragging');
+  document.getElementById('bench'+idx).removeEventListener('dragover', ev=>onDragOverBench(ev, idx));
+  document.getElementById('bench'+idx).removeEventListener('drop', ev=>onDropBench(ev, idx));
   dragPlayerId = null;
   dragFrom = null;
 }
 
 // フィールドへのドロップ
-function onDragOverField(e) { e.preventDefault(); }
-function onDropField(e) {
+function onDragOverField(e, idx) { e.preventDefault(); }
+function onDropField(e, idx) {
   e.preventDefault();
-  const field = document.getElementById('field');
+  const field = document.getElementById('field'+idx);
   const fw = field.clientWidth, fh = field.clientHeight;
-  if (dragFrom === 'bench' && playersOnField.length < 11) {
-    playersOnField.push(dragPlayerId);
+  const state = states[idx-1];
+  if (dragFrom === 'bench' && state.playersOnField.length < 11) {
+    state.playersOnField.push(dragPlayerId);
     let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
     // GKは一番下
     const p = PLAYERS.find(x=>x.id===dragPlayerId);
     if (p.positions.includes('GK')) y = 95;
-    playerPositions[dragPlayerId] = {x, y};
+    state.playerPositions[dragPlayerId] = {x, y};
   } else if (dragFrom === 'field') {
     let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
-    playerPositions[dragPlayerId] = {x, y};
+    state.playerPositions[dragPlayerId] = {x, y};
   }
-  render();
+  render(idx);
 }
 
 // 控えエリアへのドロップ
-function onDragOverBench(e) { e.preventDefault(); }
-function onDropBench(e) {
+function onDragOverBench(e, idx) { e.preventDefault(); }
+function onDropBench(e, idx) {
   e.preventDefault();
+  const state = states[idx-1];
   if (dragFrom === 'field') {
-    playersOnField = playersOnField.filter(id=>id!==dragPlayerId);
-    delete playerPositions[dragPlayerId];
+    state.playersOnField = state.playersOnField.filter(id=>id!==dragPlayerId);
+    delete state.playerPositions[dragPlayerId];
   } else if (dragFrom === 'suspension') {
-    suspensionPlayers = suspensionPlayers.filter(id=>id!==dragPlayerId);
+    state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==dragPlayerId);
   }
-  render();
+  render(idx);
 }
 
 // 出場停止エリアへのドロップ
-function onDragOverSuspension(e) { e.preventDefault(); }
-function onDropSuspension(e) {
+function onDragOverSuspension(e, idx) { e.preventDefault(); }
+function onDropSuspension(e, idx) {
   e.preventDefault();
+  const state = states[idx-1];
   if (dragFrom === 'bench') {
-    suspensionPlayers.push(dragPlayerId);
+    state.suspensionPlayers.push(dragPlayerId);
   }
-  render();
+  render(idx);
 }
 
 // タッチ操作
-function onTouchStartPlayer(e) {
+function onTouchStartPlayer(e, idx) {
   e.preventDefault();
-  const pid = +this.getAttribute('data-id');
-  let offsetX = e.touches[0].clientX - this.getBoundingClientRect().left;
-  let offsetY = e.touches[0].clientY - this.getBoundingClientRect().top;
+  const pid = +e.target.getAttribute('data-id');
+  const field = document.getElementById('field'+idx);
+  let offsetX = e.touches[0].clientX - e.target.getBoundingClientRect().left;
+  let offsetY = e.touches[0].clientY - e.target.getBoundingClientRect().top;
   const move = (ev) => {
-    let x = (ev.touches[0].clientX - document.getElementById('field').getBoundingClientRect().left - offsetX);
-    let y = (ev.touches[0].clientY - document.getElementById('field').getBoundingClientRect().top - offsetY);
-    this.style.left = Math.max(0, Math.min(x, document.getElementById('field').clientWidth-70))+'px';
-    this.style.top = Math.max(0, Math.min(y, document.getElementById('field').clientHeight-80))+'px';
+    let x = (ev.touches[0].clientX - field.getBoundingClientRect().left - offsetX);
+    let y = (ev.touches[0].clientY - field.getBoundingClientRect().top - offsetY);
+    e.target.style.left = Math.max(0, Math.min(x, field.clientWidth-70))+'px';
+    e.target.style.top = Math.max(0, Math.min(y, field.clientHeight-80))+'px';
   };
   const up = (ev) => {
-    let field = document.getElementById('field');
     let fw = field.clientWidth, fh = field.clientHeight;
-    let left = parseInt(this.style.left), top = parseInt(this.style.top);
-    playerPositions[pid] = {x: (left+35)/fw*100, y: (top+40)/fh*100};
+    let left = parseInt(e.target.style.left), top = parseInt(e.target.style.top);
+    states[idx-1].playerPositions[pid] = {x: (left+35)/fw*100, y: (top+40)/fh*100};
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
-    render();
+    render(idx);
   };
   document.addEventListener('touchmove', move, {passive:false});
   document.addEventListener('touchend', up, {passive:false});
 }
-function onTouchStartBench(e) {
+function onTouchStartBench(e, idx) {
   e.preventDefault();
-  const pid = +this.getAttribute('data-id');
-  if (playersOnField.length >= 11) return;
-  playersOnField.push(pid);
-  playerPositions[pid] = {x: 50, y: 50};
-  render();
+  const pid = +e.target.getAttribute('data-id');
+  const state = states[idx-1];
+  if (state.playersOnField.length >= 11) return;
+  state.playersOnField.push(pid);
+  state.playerPositions[pid] = {x: 50, y: 50};
+  render(idx);
 }
-function onTouchStartSuspension(e) {
+function onTouchStartSuspension(e, idx) {
   e.preventDefault();
   // 出場停止→控え
-  const pid = +this.getAttribute('data-id');
-  suspensionPlayers = suspensionPlayers.filter(id=>id!==pid);
-  render();
+  const pid = +e.target.getAttribute('data-id');
+  const state = states[idx-1];
+  state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
+  render(idx);
 }
 
 // 右クリックで控え→出場停止
-function moveToSuspension(pid) {
-  if (!suspensionPlayers.includes(pid)) {
-    suspensionPlayers.push(pid);
-    render();
+function moveToSuspension(pid, idx) {
+  const state = states[idx-1];
+  if (!state.suspensionPlayers.includes(pid)) {
+    state.suspensionPlayers.push(pid);
+    render(idx);
   }
 }
 // 右クリックで出場停止→控え
-function moveToBench(pid) {
-  suspensionPlayers = suspensionPlayers.filter(id=>id!==pid);
-  render();
+function moveToBench(pid, idx) {
+  const state = states[idx-1];
+  state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
+  render(idx);
 }
 
 // ピッチ内選手を一番近い初期配置へ
-function movePlayersToFormation() {
-  // 各選手を一番近い初期配置位置へ移動
+function movePlayersToFormation(idx) {
+  const state = states[idx-1];
   let remainInit = FORMATION_4231.map(p=>({...p}));
-  playersOnField.forEach(pid=>{
-    // 最も近い未割当の初期配置を探す
+  state.playersOnField.forEach(pid=>{
     let minIdx = 0, minDist = 1e9;
     for(let i=0;i<remainInit.length;i++) {
-      let d = Math.abs(remainInit[i].x - (playerPositions[pid]?.x??50)) + Math.abs(remainInit[i].y - (playerPositions[pid]?.y??50));
+      let d = Math.abs(remainInit[i].x - (state.playerPositions[pid]?.x??50)) + Math.abs(remainInit[i].y - (state.playerPositions[pid]?.y??50));
       if (d < minDist) { minDist = d; minIdx = i; }
     }
-    playerPositions[pid] = {x: remainInit[minIdx].x, y: remainInit[minIdx].y};
+    state.playerPositions[pid] = {x: remainInit[minIdx].x, y: remainInit[minIdx].y};
     remainInit.splice(minIdx,1);
   });
-  render();
+  render(idx);
 }
 
-window.addEventListener('resize', render);
-render();
+// 上の状態を下にコピー
+function copyFromUpper() {
+  // 深いコピー
+  states[1].playersOnField = [...states[0].playersOnField];
+  states[1].playerPositions = JSON.parse(JSON.stringify(states[0].playerPositions));
+  states[1].suspensionPlayers = [...states[0].suspensionPlayers];
+  render(2);
+}
+
+window.addEventListener('resize', renderAll);
+renderAll();
 </script>
 </body>
 </html>
