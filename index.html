@@ -620,29 +620,30 @@ function onTouchStartPlayer(e, idx) {
   if (!playerDiv) return;
   const pid = +playerDiv.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
-  const fw = field.clientWidth, fh = field.clientHeight;
-  const pos = states[idx-1].playerPositions[pid];
-  let startX = e.touches[0].clientX;
-  let startY = e.touches[0].clientY;
-  let origLeft = pos.x/100*fw - playerDiv.offsetWidth/2;
-  let origTop  = pos.y/100*fh - playerDiv.offsetHeight/2;
-  let offsetX = startX - (field.getBoundingClientRect().left + origLeft);
-  let offsetY = startY - (field.getBoundingClientRect().top  + origTop);
 
+  // タッチ開始時点の選手の絶対座標
+  const playerRect = playerDiv.getBoundingClientRect();
+  const fieldRect = field.getBoundingClientRect();
+  const offsetX = e.touches[0].clientX - playerRect.left;
+  const offsetY = e.touches[0].clientY - playerRect.top;
+
+  // 移動処理
   const move = (ev) => {
-    let x = (ev.touches[0].clientX - field.getBoundingClientRect().left - offsetX);
-    let y = (ev.touches[0].clientY - field.getBoundingClientRect().top - offsetY);
-    x = Math.max(0, Math.min(x, field.clientWidth-playerDiv.offsetWidth));
-    y = Math.max(0, Math.min(y, field.clientHeight-playerDiv.offsetHeight));
-    playerDiv.style.left = x+'px';
-    playerDiv.style.top = y+'px';
+    ev.preventDefault();
+    let x = ev.touches[0].clientX - fieldRect.left - offsetX;
+    let y = ev.touches[0].clientY - fieldRect.top - offsetY;
+    x = Math.max(0, Math.min(x, field.clientWidth - playerDiv.offsetWidth));
+    y = Math.max(0, Math.min(y, field.clientHeight - playerDiv.offsetHeight));
+    playerDiv.style.left = x + 'px';
+    playerDiv.style.top = y + 'px';
   };
+  // タッチ終了時
   const up = (ev) => {
     let fw = field.clientWidth, fh = field.clientHeight;
     let left = parseInt(playerDiv.style.left), top = parseInt(playerDiv.style.top);
     states[idx-1].playerPositions[pid] = {
-      x: (left+playerDiv.offsetWidth/2)/fw*100,
-      y: (top+playerDiv.offsetHeight/2)/fh*100
+      x: (left + playerDiv.offsetWidth/2) / fw * 100,
+      y: (top + playerDiv.offsetHeight/2) / fh * 100
     };
     playerDiv.style.left = '';
     playerDiv.style.top = '';
