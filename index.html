@@ -535,19 +535,11 @@ function onDragStartBench(e, idx) {
   e.target.classList.add('dragging');
   document.getElementById('field'+idx).addEventListener('dragover', ev=>onDragOverField(ev, idx));
   document.getElementById('field'+idx).addEventListener('drop', ev=>onDropField(ev, idx));
-  document.getElementById('bench'+idx).addEventListener('dragover', ev=>onDragOverBench(ev, idx));
-  document.getElementById('bench'+idx).addEventListener('drop', ev=>onDropBench(ev, idx));
-  document.getElementById('suspension'+idx).addEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
-  document.getElementById('suspension'+idx).addEventListener('drop', ev=>onDropSuspension(ev, idx));
 }
 function onDragEndBench(e, idx) {
   e.target.classList.remove('dragging');
   document.getElementById('field'+idx).removeEventListener('dragover', ev=>onDragOverField(ev, idx));
   document.getElementById('field'+idx).removeEventListener('drop', ev=>onDropField(ev, idx));
-  document.getElementById('bench'+idx).removeEventListener('dragover', ev=>onDragOverBench(ev, idx));
-  document.getElementById('bench'+idx).removeEventListener('drop', ev=>onDropBench(ev, idx));
-  document.getElementById('suspension'+idx).removeEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
-  document.getElementById('suspension'+idx).removeEventListener('drop', ev=>onDropSuspension(ev, idx));
   dragPlayerId = null;
   dragFrom = null;
 }
@@ -666,7 +658,10 @@ function onTouchStartBench(e, idx) {
   const pid = +e.target.getAttribute('data-id');
   const state = states[idx-1];
   if (state.playersOnField.length >= 11) return;
+  // 既にフィールドにいる場合は何もしない
+  if (state.playersOnField.includes(pid)) return;
   state.playersOnField.push(pid);
+  // 初期位置は中央
   state.playerPositions[pid] = {x: 50, y: 50};
   render(idx);
 }
