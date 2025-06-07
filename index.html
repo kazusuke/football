@@ -491,6 +491,12 @@ function render(idx) {
       const pid = +e.target.closest('.suspension-player').getAttribute('data-id');
       moveToBench(pid, idx);
     });
+    // フィールド上の選手長押しで控えに戻す
+    addLongPressContextMenu(`#field${idx} .player`, e => {
+      e.preventDefault();
+      const pid = +e.target.closest('.player').getAttribute('data-id');
+      removeFromField(pid, idx);
+    });
   }, 10);
 }
 
@@ -607,21 +613,37 @@ function onDropSuspension(e, idx) {
   render(idx);
 }
 
+// フィールドから控えに戻す（スマホ長押し用）
+function removeFromField(pid, idx) {
+  const state = states[idx-1];
+  state.playersOnField = state.playersOnField.filter(id=>id!==pid);
+  delete state.playerPositions[pid];
+  render(idx);
+}
+
 // タッチ操作
 function onTouchStartPlayer(e, idx) {
   e.preventDefault();
-  // .player以外がターゲットなら親を取得
   let playerDiv = e.target.closest('.player');
   if (!playerDiv) return;
   const pid = +playerDiv.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
-  let offsetX = e.touches[0].clientX - playerDiv.getBoundingClientRect().left;
-  let offsetY = e.touches[0].clientY - playerDiv.getBoundingClientRect().top;
+  const fw = field.clientWidth, fh = field.clientHeight;
+  const pos = states[idx-1].playerPositions[pid];
+  let startX = e.touches[0].clientX;
+  let startY = e.touches[0].clientY;
+  let origLeft = pos.x/100*fw - playerDiv.offsetWidth/2;
+  let origTop  = pos.y/100*fh - playerDiv.offsetHeight/2;
+  let offsetX = startX - (field.getBoundingClientRect().left + origLeft);
+  let offsetY = startY - (field.getBoundingClientRect().top  + origTop);
+
   const move = (ev) => {
     let x = (ev.touches[0].clientX - field.getBoundingClientRect().left - offsetX);
     let y = (ev.touches[0].clientY - field.getBoundingClientRect().top - offsetY);
-    playerDiv.style.left = Math.max(0, Math.min(x, field.clientWidth-playerDiv.offsetWidth))+'px';
-    playerDiv.style.top = Math.max(0, Math.min(y, field.clientHeight-playerDiv.offsetHeight))+'px';
+    x = Math.max(0, Math.min(x, field.clientWidth-playerDiv.offsetWidth));
+    y = Math.max(0, Math.min(y, field.clientHeight-playerDiv.offsetHeight));
+    playerDiv.style.left = x+'px';
+    playerDiv.style.top = y+'px';
   };
   const up = (ev) => {
     let fw = field.clientWidth, fh = field.clientHeight;
@@ -630,6 +652,8 @@ function onTouchStartPlayer(e, idx) {
       x: (left+playerDiv.offsetWidth/2)/fw*100,
       y: (top+playerDiv.offsetHeight/2)/fh*100
     };
+    playerDiv.style.left = '';
+    playerDiv.style.top = '';
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
     render(idx);
