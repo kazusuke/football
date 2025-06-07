@@ -352,7 +352,7 @@ const PLAYERS = [
   { id: 12, name: '峯', number: 12, positions: ['GK'] },
   { id: 13, name: '福島', number: 13, positions: ['CB'] },
   { id: 14, name: '井原', number: 14, positions: ['CM'] },
-  { id: 17, name: '平田', number: 88, positions: ['CDM'] },
+  { id: 17, name: '平田', number: 7, positions: ['CDM'] },
   { id: 15, name: '有田 Ⓤ', number: 15, positions: ['CDM'] },
   { id: 21, name: '芝本ｻｲﾄﾞ Ⓤ', number: 88, positions: ['CDM'] },
   { id: 22, name: '田中ﾎﾞﾗﾝﾁ Ⓤ', number: 88, positions: ['CDM'] },
@@ -620,54 +620,51 @@ function onDropSuspension(e, idx) {
   render(idx);
 }
 
-// タッチ操作で複数指対応 ---------------------
-let activeTouches = {}; // identifierごとに { pid, idx, target, offsetX, offsetY } を格納
-
+// タッチ操作
 function onTouchStartPlayer(e, idx) {
   e.preventDefault();
   const pid = +e.target.getAttribute('data-id');
-  for (let t of e.changedTouches) {
-    // 選手ごとに異なるtargetになる可能性がある
-    let offsetX = t.clientX - e.target.getBoundingClientRect().left;
-    let offsetY = t.clientY - e.target.getBoundingClientRect().top;
-    activeTouches[t.identifier] = {pid, idx, target: e.target, offsetX, offsetY};
-  }
+  const field = document.getElementById('field'+idx);
+  let offsetX = e.touches[0].clientX - e.target.getBoundingClientRect().left;
+  let offsetY = e.touches[0].clientY - e.target.getBoundingClientRect().top;
+  const move = (ev) => {
+    let x = (ev.touches[0].clientX - field.getBoundingClientRect().left - offsetX);
+    let y = (ev.touches[0].clientY - field.getBoundingClientRect().top - offsetY);
+    e.target.style.left = Math.max(0, Math.min(x, field.clientWidth-e.target.offsetWidth))+'px';
+    e.target.style.top = Math.max(0, Math.min(y, field.clientHeight-e.target.offsetHeight))+'px';
+  };
+  const up = (ev) => {
+    let fw = field.clientWidth, fh = field.clientHeight;
+    let left = parseInt(e.target.style.left), top = parseInt(e.target.style.top);
+    states[idx-1].playerPositions[pid] = {
+      x: (left+e.target.offsetWidth/2)/fw*100,
+      y: (top+e.target.offsetHeight/2)/fh*100
+    };
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', up);
+    render(idx);
+  };
+  document.addEventListener('touchmove', move, {passive:false});
+  document.addEventListener('touchend', up, {passive:false});
+}
+function onTouchStartBench(e, idx) {
+  e.preventDefault();
+  const pid = +e.target.getAttribute('data-id');
+  const state = states[idx-1];
+  if (state.playersOnField.length >= 11) return;
+  state.playersOnField.push(pid);
+  state.playerPositions[pid] = {x: 50, y: 50};
+  render(idx);
+}
+function onTouchStartSuspension(e, idx) {
+  e.preventDefault();
+  // 出場停止→控え
+  const pid = +e.target.getAttribute('data-id');
+  const state = states[idx-1];
+  state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
+  render(idx);
 }
 
-// documentへのイベント登録（1回だけでOK）
-if (!window._touchMoveRegistered) {
-  document.addEventListener('touchmove', function(e){
-    for (let t of e.changedTouches) {
-      let info = activeTouches[t.identifier];
-      if (!info) continue;
-      const field = document.getElementById('field' + info.idx);
-      // フィールド基準で移動
-      let x = t.clientX - field.getBoundingClientRect().left - info.offsetX;
-      let y = t.clientY - field.getBoundingClientRect().top - info.offsetY;
-      // 画面外チェック
-      x = Math.max(0, Math.min(x, field.clientWidth - info.target.offsetWidth));
-      y = Math.max(0, Math.min(y, field.clientHeight - info.target.offsetHeight));
-      info.target.style.left = x + 'px';
-      info.target.style.top = y + 'px';
-    }
-  }, {passive:false});
-
-  document.addEventListener('touchend', function(e){
-    for (let t of e.changedTouches) {
-      let info = activeTouches[t.identifier];
-      if (!info) continue;
-      const field = document.getElementById('field' + info.idx);
-      let left = parseInt(info.target.style.left), top = parseInt(info.target.style.top);
-      let fw = field.clientWidth, fh = field.clientHeight;
-      states[info.idx-1].playerPositions[info.pid] = {
-        x: (left + info.target.offsetWidth/2) / fw * 100,
-        y: (top + info.target.offsetHeight/2) / fh * 100
-      };
-      delete activeTouches[t.identifier];
-      render(info.idx);
-    }
-  }, {passive:false});
-  window._touchMoveRegistered = true;
 // タッチ長押しで右クリック相当（控え→出場停止、出場停止→控え）
 function addLongPressContextMenu(selector, callback) {
   document.querySelectorAll(selector).forEach(el => {
