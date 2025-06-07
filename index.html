@@ -621,17 +621,26 @@ function onTouchStartPlayer(e, idx) {
   const pid = +playerDiv.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
 
-  // タッチ開始時点の選手の絶対座標
-  const playerRect = playerDiv.getBoundingClientRect();
-  const fieldRect = field.getBoundingClientRect();
-  const offsetX = e.touches[0].clientX - playerRect.left;
-  const offsetY = e.touches[0].clientY - playerRect.top;
+  // 現在のleft/top（px）を取得（初回描画時はstyle未設定なので計算）
+  let left0 = parseFloat(playerDiv.style.left);
+  let top0 = parseFloat(playerDiv.style.top);
+  if (isNaN(left0) || isNaN(top0)) {
+    // fieldのサイズと現在の%座標から計算
+    const fw = field.clientWidth, fh = field.clientHeight;
+    const pos = states[idx-1].playerPositions[pid];
+    left0 = (pos.x/100*fw) - playerDiv.offsetWidth/2;
+    top0 = (pos.y/100*fh) - playerDiv.offsetHeight/2;
+  }
+  const startX = e.touches[0].clientX;
+  const startY = e.touches[0].clientY;
 
   // 移動処理
   const move = (ev) => {
     ev.preventDefault();
-    let x = ev.touches[0].clientX - fieldRect.left - offsetX;
-    let y = ev.touches[0].clientY - fieldRect.top - offsetY;
+    let dx = ev.touches[0].clientX - startX;
+    let dy = ev.touches[0].clientY - startY;
+    let x = left0 + dx;
+    let y = top0 + dy;
     x = Math.max(0, Math.min(x, field.clientWidth - playerDiv.offsetWidth));
     y = Math.max(0, Math.min(y, field.clientHeight - playerDiv.offsetHeight));
     playerDiv.style.left = x + 'px';
@@ -640,7 +649,7 @@ function onTouchStartPlayer(e, idx) {
   // タッチ終了時
   const up = (ev) => {
     let fw = field.clientWidth, fh = field.clientHeight;
-    let left = parseInt(playerDiv.style.left), top = parseInt(playerDiv.style.top);
+    let left = parseFloat(playerDiv.style.left), top = parseFloat(playerDiv.style.top);
     states[idx-1].playerPositions[pid] = {
       x: (left + playerDiv.offsetWidth/2) / fw * 100,
       y: (top + playerDiv.offsetHeight/2) / fh * 100
