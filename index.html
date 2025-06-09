@@ -132,7 +132,7 @@
     }
     .player-name {
       text-align: center;
-      font-size: 1.8em;
+      font-size: 1.35em;
       font-weight: bold;
       color: #fff;
       text-shadow: 1px 1px 3px #000b;
@@ -185,7 +185,7 @@
     }
     .bench-player .player-name, .suspension-player .player-name {
       color: #333;
-      font-size: 1.4em;
+      font-size: 1.1em;
       text-shadow: none;
     }
     .suspension-title {
@@ -265,7 +265,7 @@
     @media (max-width: 600px) {
       .player { width: 48px; height: 56px; }
       .player-circle { width: 36px; height: 36px; font-size: 1.2em; }
-      .player-name { font-size: 1.3em; }
+      .player-name { font-size: 0.9em; }
       .bench-player .player-circle, .suspension-player .player-circle { font-size: 1em; }
       .bench-player, .suspension-player { padding: 3px 0 2px 0; }
       .bench-area { min-width: unset; padding: 8px 2px; }
@@ -283,6 +283,7 @@
         <div class="penalty-area"></div>
         <div class="goal-line"></div>
         <div class="goal"></div>
+        <!-- 選手はJSで描画 -->
       </div>
     </div>
     <div class="bench-area">
@@ -293,6 +294,7 @@
       <div class="suspension-list" id="suspension1"></div>
     </div>
   </div>
+  <!-- ↓ここから下にもう1セット複製＋コピー用ボタン -->
   <div class="main" id="main2">
     <div class="field-area">
       <div class="field" id="field2">
@@ -313,6 +315,7 @@
       <div class="suspension-list" id="suspension2"></div>
     </div>
   </div>
+  <!-- 編集用モーダルは1つでOK -->
   <div id="edit-modal">
     <div class="modal-inner">
       <h3>選手情報の編集</h3>
@@ -329,6 +332,7 @@
     </div>
   </div>
 <script>
+// --- 2面分の状態を持つ ---
 const PLAYERS = [
   { id: 1, name: '坂本', number: 1, positions: ['GK'] },
   { id: 6, name: '神門', number: 2, positions: ['RB','CM'] },
@@ -355,8 +359,10 @@ const PLAYERS = [
   { id: 23, name: '助っ人', number: 88, positions: ['CDM'] }
 ];
 
+// デフォルトで出場停止にしたい選手ID
 const DEFAULT_SUSPENSIONS = [23, 18,20,17];
 
+// 4-2-3-1 ハーフピッチ用初期配置（%: x=横, y=縦）
 const FORMATION_4231 = [
   { id: 1, x: 50, y: 90 },   // GK
   { id: 2, x: 17, y: 75 },   // RB
@@ -371,6 +377,7 @@ const FORMATION_4231 = [
   { id: 11, x: 50, y: 18 }   // ST
 ];
 
+// 2面分の状態
 let states = [
   {
     playersOnField: [...FORMATION_4231.map(p=>p.id)],
@@ -384,7 +391,7 @@ let states = [
   }
 ];
 
-// 編集モーダル関連
+// 編集モーダル関連（1面目のみ編集可）
 function openEditModal(pid) {
   const p = PLAYERS.find(x => x.id === pid);
   document.getElementById('edit-id').value = p.id;
@@ -407,12 +414,15 @@ document.getElementById('edit-form').onsubmit = function(e) {
   renderAll();
 };
 
+// 2面分描画
 function renderAll() {
   render(1);
   render(2);
 }
 function render(idx) {
+  // idx: 1 or 2
   const state = states[idx-1];
+  // フィールド側
   const field = document.getElementById('field'+idx);
   field.querySelectorAll('.player').forEach(e=>e.remove());
   const fw = field.clientWidth, fh = field.clientHeight;
@@ -428,10 +438,8 @@ function render(idx) {
     div.innerHTML = `<div class="player-circle">${p.number}</div><div class="player-name">${p.name}</div>`;
     div.addEventListener('dragstart', e=>onDragStartPlayer(e, idx));
     div.addEventListener('dragend', e=>onDragEndPlayer(e, idx));
-    // タッチイベントは親・子どちらでもOKに
     div.addEventListener('touchstart', e=>onTouchStartPlayer(e, idx), {passive:false});
-    div.querySelector('.player-circle').addEventListener('touchstart', e=>onTouchStartPlayer(e, idx), {passive:false});
-    div.querySelector('.player-name').addEventListener('touchstart', e=>onTouchStartPlayer(e, idx), {passive:false});
+    // 編集は1面目のみ
     if(idx===1) {
       div.querySelector('.player-name').style.cursor = "pointer";
       div.querySelector('.player-name').style.textDecoration = "underline dotted";
@@ -453,6 +461,7 @@ function render(idx) {
     div.addEventListener('dragstart', e=>onDragStartBench(e, idx));
     div.addEventListener('dragend', e=>onDragEndBench(e, idx));
     div.addEventListener('touchstart', e=>onTouchStartBench(e, idx), {passive:false});
+    // 右クリックで出場停止
     div.addEventListener('contextmenu', e=>{
       e.preventDefault();
       moveToSuspension(p.id, idx);
@@ -473,6 +482,7 @@ function render(idx) {
     div.addEventListener('dragstart', e=>onDragStartSuspension(e, idx));
     div.addEventListener('dragend', e=>onDragEndSuspension(e, idx));
     div.addEventListener('touchstart', e=>onTouchStartSuspension(e, idx), {passive:false});
+    // 右クリックで控えに戻す
     div.addEventListener('contextmenu', e=>{
       e.preventDefault();
       moveToBench(p.id, idx);
@@ -480,6 +490,8 @@ function render(idx) {
     suspension.appendChild(div);
   });
 
+  // --- ここから追加 ---
+  // bench-player, suspension-playerに長押しで右クリック相当
   setTimeout(() => {
     addLongPressContextMenu(`#bench${idx} .bench-player`, e => {
       e.preventDefault();
@@ -490,12 +502,6 @@ function render(idx) {
       e.preventDefault();
       const pid = +e.target.closest('.suspension-player').getAttribute('data-id');
       moveToBench(pid, idx);
-    });
-    // フィールド上の選手長押しで控えに戻す
-    addLongPressContextMenu(`#field${idx} .player`, e => {
-      e.preventDefault();
-      const pid = +e.target.closest('.player').getAttribute('data-id');
-      removeFromField(pid, idx);
     });
   }, 10);
 }
@@ -535,11 +541,19 @@ function onDragStartBench(e, idx) {
   e.target.classList.add('dragging');
   document.getElementById('field'+idx).addEventListener('dragover', ev=>onDragOverField(ev, idx));
   document.getElementById('field'+idx).addEventListener('drop', ev=>onDropField(ev, idx));
+  document.getElementById('bench'+idx).addEventListener('dragover', ev=>onDragOverBench(ev, idx));
+  document.getElementById('bench'+idx).addEventListener('drop', ev=>onDropBench(ev, idx));
+  document.getElementById('suspension'+idx).addEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
+  document.getElementById('suspension'+idx).addEventListener('drop', ev=>onDropSuspension(ev, idx));
 }
 function onDragEndBench(e, idx) {
   e.target.classList.remove('dragging');
   document.getElementById('field'+idx).removeEventListener('dragover', ev=>onDragOverField(ev, idx));
   document.getElementById('field'+idx).removeEventListener('drop', ev=>onDropField(ev, idx));
+  document.getElementById('bench'+idx).removeEventListener('dragover', ev=>onDragOverBench(ev, idx));
+  document.getElementById('bench'+idx).removeEventListener('drop', ev=>onDropBench(ev, idx));
+  document.getElementById('suspension'+idx).removeEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
+  document.getElementById('suspension'+idx).removeEventListener('drop', ev=>onDropSuspension(ev, idx));
   dragPlayerId = null;
   dragFrom = null;
 }
@@ -570,6 +584,7 @@ function onDropField(e, idx) {
   if (dragFrom === 'bench' && state.playersOnField.length < 11) {
     state.playersOnField.push(dragPlayerId);
     let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
+    // GKは一番下
     const p = PLAYERS.find(x=>x.id===dragPlayerId);
     if (p.positions.includes('GK')) y = 95;
     state.playerPositions[dragPlayerId] = {x, y};
@@ -605,73 +620,30 @@ function onDropSuspension(e, idx) {
   render(idx);
 }
 
-// フィールドから控えに戻す（スマホ長押し用）
-function removeFromField(pid, idx) {
-  const state = states[idx-1];
-  state.playersOnField = state.playersOnField.filter(id=>id!==pid);
-  delete state.playerPositions[pid];
-  render(idx);
-}
-
 // タッチ操作
 function onTouchStartPlayer(e, idx) {
   e.preventDefault();
-  let playerDiv = e.target.closest('.player');
-  if (!playerDiv) return;
-  const pid = +playerDiv.getAttribute('data-id');
+  const pid = +e.target.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
-
-  // フィールドサイズ取得
-  const fw = field.clientWidth, fh = field.clientHeight;
-  const pos = states[idx-1].playerPositions[pid];
-
-  // プレイヤー中心の絶対座標
-  let playerCenterX = pos.x / 100 * fw;
-  let playerCenterY = pos.y / 100 * fh;
-
-  // タッチ開始時の指の座標
-  const startTouch = e.touches[0];
-  const touchX = startTouch.clientX - field.getBoundingClientRect().left;
-  const touchY = startTouch.clientY - field.getBoundingClientRect().top;
-
-  // 指と選手中心の差分
-  const offsetX = touchX - playerCenterX;
-  const offsetY = touchY - playerCenterY;
-
-  // 初回タッチ時に正しい位置に配置
-  playerDiv.style.left = (playerCenterX - playerDiv.offsetWidth/2) + 'px';
-  playerDiv.style.top  = (playerCenterY - playerDiv.offsetHeight/2) + 'px';
-
-  // 移動中も中心基準で追従
+  let offsetX = e.touches[0].clientX - e.target.getBoundingClientRect().left;
+  let offsetY = e.touches[0].clientY - e.target.getBoundingClientRect().top;
   const move = (ev) => {
-    ev.preventDefault();
-    const touch = ev.touches[0];
-    let moveX = touch.clientX - field.getBoundingClientRect().left - offsetX;
-    let moveY = touch.clientY - field.getBoundingClientRect().top - offsetY;
-
-    // 境界制限（中心基準でフィールド内に収める）
-    moveX = Math.max(playerDiv.offsetWidth/2, Math.min(moveX, fw - playerDiv.offsetWidth/2));
-    moveY = Math.max(playerDiv.offsetHeight/2, Math.min(moveY, fh - playerDiv.offsetHeight/2));
-
-    playerDiv.style.left = (moveX - playerDiv.offsetWidth/2) + 'px';
-    playerDiv.style.top  = (moveY - playerDiv.offsetHeight/2) + 'px';
+    let x = (ev.touches[0].clientX - field.getBoundingClientRect().left - offsetX);
+    let y = (ev.touches[0].clientY - field.getBoundingClientRect().top - offsetY);
+    e.target.style.left = Math.max(0, Math.min(x, field.clientWidth-e.target.offsetWidth))+'px';
+    e.target.style.top = Math.max(0, Math.min(y, field.clientHeight-e.target.offsetHeight))+'px';
   };
-
   const up = (ev) => {
-    const fw = field.clientWidth, fh = field.clientHeight;
-    const left = parseFloat(playerDiv.style.left), top = parseFloat(playerDiv.style.top);
-    // 新しい中心座標を%で保存
+    let fw = field.clientWidth, fh = field.clientHeight;
+    let left = parseInt(e.target.style.left), top = parseInt(e.target.style.top);
     states[idx-1].playerPositions[pid] = {
-      x: (left + playerDiv.offsetWidth/2) / fw * 100,
-      y: (top + playerDiv.offsetHeight/2) / fh * 100
+      x: (left+e.target.offsetWidth/2)/fw*100,
+      y: (top+e.target.offsetHeight/2)/fh*100
     };
-    playerDiv.style.left = '';
-    playerDiv.style.top = '';
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
     render(idx);
   };
-
   document.addEventListener('touchmove', move, {passive:false});
   document.addEventListener('touchend', up, {passive:false});
 }
@@ -680,29 +652,27 @@ function onTouchStartBench(e, idx) {
   const pid = +e.target.getAttribute('data-id');
   const state = states[idx-1];
   if (state.playersOnField.length >= 11) return;
-  // 既にフィールドにいる場合は何もしない
-  if (state.playersOnField.includes(pid)) return;
   state.playersOnField.push(pid);
-  // 初期位置は中央
   state.playerPositions[pid] = {x: 50, y: 50};
   render(idx);
 }
 function onTouchStartSuspension(e, idx) {
   e.preventDefault();
+  // 出場停止→控え
   const pid = +e.target.getAttribute('data-id');
   const state = states[idx-1];
   state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
   render(idx);
 }
 
-// タッチ長押しで右クリック相当
+// タッチ長押しで右クリック相当（控え→出場停止、出場停止→控え）
 function addLongPressContextMenu(selector, callback) {
   document.querySelectorAll(selector).forEach(el => {
     let timer = null;
     el.addEventListener('touchstart', function(e) {
       timer = setTimeout(() => {
         callback(e);
-      }, 600);
+      }, 600); // 600ms長押し
     }, {passive:false});
     el.addEventListener('touchend', function() {
       clearTimeout(timer);
@@ -713,6 +683,7 @@ function addLongPressContextMenu(selector, callback) {
   });
 }
 
+// 右クリックで控え→出場停止
 function moveToSuspension(pid, idx) {
   const state = states[idx-1];
   if (!state.suspensionPlayers.includes(pid)) {
@@ -720,12 +691,14 @@ function moveToSuspension(pid, idx) {
     render(idx);
   }
 }
+// 右クリックで出場停止→控え
 function moveToBench(pid, idx) {
   const state = states[idx-1];
   state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
   render(idx);
 }
 
+// ピッチ内選手を一番近い初期配置へ
 function movePlayersToFormation(idx) {
   const state = states[idx-1];
   let remainInit = FORMATION_4231.map(p=>({...p}));
@@ -741,7 +714,9 @@ function movePlayersToFormation(idx) {
   render(idx);
 }
 
+// 上の状態を下にコピー
 function copyFromUpper() {
+  // 深いコピー
   states[1].playersOnField = [...states[0].playersOnField];
   states[1].playerPositions = JSON.parse(JSON.stringify(states[0].playerPositions));
   states[1].suspensionPlayers = [...states[0].suspensionPlayers];
@@ -752,4 +727,57 @@ window.addEventListener('resize', renderAll);
 renderAll();
 </script>
 </body>
+  <body>
+  <!-- フィールド上の選手移動 -->
+  <script>
+    // function onTouchStartPlayer(e, idx) {
+  e.preventDefault();
+  const pid = +e.target.getAttribute('data-id');
+  const field = document.getElementById('field'+idx);
+  const player = e.target;
+  const playerRect = player.getBoundingClientRect();
+  const fieldRect = field.getBoundingClientRect();
+
+  // タッチ位置のオフセット
+  const offsetX = e.touches[0].clientX - playerRect.left;
+  const offsetY = e.touches[0].clientY - playerRect.top;
+
+  const move = (ev) => {
+    ev.preventDefault();
+    // 画面外チェック
+    let x = Math.max(0, Math.min(
+      ev.touches[0].clientX - fieldRect.left - offsetX,
+      field.clientWidth - player.offsetWidth
+    ));
+    let y = Math.max(0, Math.min(
+      ev.touches[0].clientY - fieldRect.top - offsetY,
+      field.clientHeight - player.offsetHeight
+    ));
+    player.style.left = x + 'px';
+    player.style.top = y + 'px';
+  };
+
+  const up = (ev) => {
+    ev.preventDefault();
+    // 移動完了時にstateに反映
+    const left = parseInt(player.style.left);
+    const top = parseInt(player.style.top);
+    states[idx-1].playerPositions[pid] = {
+      x: (left + player.offsetWidth/2) / field.clientWidth * 100,
+      y: (top + player.offsetHeight/2) / field.clientHeight * 100
+    };
+    // イベント解除
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', up);
+    // 再描画は不要（移動中はstateを無視してるので）
+  };
+
+  // イベント登録
+  document.addEventListener('touchmove', move, {passive: false});
+  document.addEventListener('touchend', up, {passive: false});
+}
+
+  </script>
+</body>
+
 </html>
