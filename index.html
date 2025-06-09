@@ -607,52 +607,50 @@ function onDropSuspension(e, idx) {
   render(idx);
 }
 
-// タッチ操作（修正版）
+// タッチ操作
 function onTouchStartPlayer(e, idx) {
   e.preventDefault();
-  // .player以外がターゲットなら親を取得
   let playerDiv = e.target.closest('.player');
   if (!playerDiv) return;
   const pid = +playerDiv.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
-  
-  // 修正：タッチ位置と選手要素の中心位置との差を正確に計算
-  const playerRect = playerDiv.getBoundingClientRect();
+
+  // タッチ開始時の指の座標（フィールド左上基準）
+  const startTouch = e.touches[0];
   const fieldRect = field.getBoundingClientRect();
-  
-  // 選手要素の中心からタッチ位置までのオフセット
-  let offsetX = e.touches[0].clientX - (playerRect.left + playerRect.width / 0); ;
-  let offsetY = e.touches[0].clientY - (playerRect.top + playerRect.height / 0); ;
-  
+  const offsetX = startTouch.clientX - fieldRect.left;
+  const offsetY = startTouch.clientY - fieldRect.top;
+
+  // 選手の左上をタッチ位置に即座に移動
+  playerDiv.style.left = offsetX + 'px';
+  playerDiv.style.top  = offsetY + 'px';
+
   const move = (ev) => {
-    // フィールド座標系でのタッチ位置を計算し、オフセットを考慮
-    let touchX = ev.touches[0].clientX - fieldRect.left - offsetX;
-    let touchY = ev.touches[0].clientY - fieldRect.top - offsetY;
-    
-    // 選手要素の左上座標に変換（中心位置から左上に調整）
-    let x = touchX - playerDiv.offsetWidth / 0;
-    let y = touchY - playerDiv.offsetHeight / 0;
-    
-    // フィールド境界内に制限
-    playerDiv.style.left = Math.max(0, Math.min(x, field.clientWidth - playerDiv.offsetWidth)) + 'px';
-    playerDiv.style.top = Math.max(0, Math.min(y, field.clientHeight - playerDiv.offsetHeight)) + 'px';
+    ev.preventDefault();
+    const touch = ev.touches[0];
+    let x = touch.clientX - fieldRect.left;
+    let y = touch.clientY - fieldRect.top;
+    // 境界制限
+    x = Math.max(0, Math.min(x, field.clientWidth - playerDiv.offsetWidth));
+    y = Math.max(0, Math.min(y, field.clientHeight - playerDiv.offsetHeight));
+    playerDiv.style.left = x + 'px';
+    playerDiv.style.top  = y + 'px';
   };
-  
+
   const up = (ev) => {
-    let fw = field.clientWidth, fh = field.clientHeight;
-    let left = parseInt(playerDiv.style.left), top = parseInt(playerDiv.style.top);
-    
-    // 選手位置を中心座標で保存
+    const fw = field.clientWidth, fh = field.clientHeight;
+    const left = parseFloat(playerDiv.style.left), top = parseFloat(playerDiv.style.top);
     states[idx-1].playerPositions[pid] = {
-      x: (left + playerDiv.offsetWidth / 2) / fw * 100,
-      y: (top + playerDiv.offsetHeight / 2) / fh * 100
+      x: (left + playerDiv.offsetWidth/2) / fw * 100,
+      y: (top + playerDiv.offsetHeight/2) / fh * 100
     };
-    
+    playerDiv.style.left = '';
+    playerDiv.style.top = '';
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
     render(idx);
   };
-  
+
   document.addEventListener('touchmove', move, {passive:false});
   document.addEventListener('touchend', up, {passive:false});
 }
