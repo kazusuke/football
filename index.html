@@ -624,13 +624,17 @@ function onTouchStartPlayer(e, idx) {
   // 現在の描画位置(px)を取得
   const fw = field.clientWidth, fh = field.clientHeight;
   const pos = states[idx-1].playerPositions[pid];
+  // プレイヤーの現在位置（px）
   let origLeft = pos.x/100*fw - playerDiv.offsetWidth/2;
   let origTop  = pos.y/100*fh - playerDiv.offsetHeight/2;
 
   // タッチ開始時点の指と選手左上の差分
   const startTouch = e.touches[0];
-  const offsetX = startTouch.clientX - (field.getBoundingClientRect().left + origLeft);
-  const offsetY = startTouch.clientY - (field.getBoundingClientRect().top  + origTop);
+  // ここを修正: playerDivの現在のleft/topを使う
+  let styleLeft = playerDiv.style.left ? parseFloat(playerDiv.style.left) : origLeft;
+  let styleTop  = playerDiv.style.top  ? parseFloat(playerDiv.style.top)  : origTop;
+  const offsetX = startTouch.clientX - (field.getBoundingClientRect().left + styleLeft);
+  const offsetY = startTouch.clientY - (field.getBoundingClientRect().top  + styleTop);
 
   const move = (ev) => {
     ev.preventDefault();
