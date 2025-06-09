@@ -642,6 +642,7 @@ function onTouchStartPlayer(e, idx) {
   playerDiv.style.left = (playerCenterX - playerDiv.offsetWidth/2) + 'px';
   playerDiv.style.top  = (playerCenterY - playerDiv.offsetHeight/2) + 'px';
 
+  // 移動中も中心基準で追従
   const move = (ev) => {
     ev.preventDefault();
     const touch = ev.touches[0];
