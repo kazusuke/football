@@ -615,31 +615,46 @@ function onTouchStartPlayer(e, idx) {
   const pid = +playerDiv.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
 
+  // フィールドサイズ取得
+  const fw = field.clientWidth, fh = field.clientHeight;
+  const pos = states[idx-1].playerPositions[pid];
+
+  // プレイヤー中心の絶対座標
+  let playerCenterX = pos.x / 100 * fw;
+  let playerCenterY = pos.y / 100 * fh;
+
   // タッチ開始時の指の座標（フィールド左上基準）
   const startTouch = e.touches[0];
   const fieldRect = field.getBoundingClientRect();
-  const offsetX = startTouch.clientX - fieldRect.left;
-  const offsetY = startTouch.clientY - fieldRect.top;
+  const touchX = startTouch.clientX - fieldRect.left;
+  const touchY = startTouch.clientY - fieldRect.top;
 
-  // 選手の左上をタッチ位置に即座に移動
-  playerDiv.style.left = offsetX + 'px';
-  playerDiv.style.top  = offsetY + 'px';
+  // 指と選手中心の差分
+  const offsetX = touchX - playerCenterX;
+  const offsetY = touchY - playerCenterY;
+
+  // 初回タッチ時に正しい位置に配置
+  playerDiv.style.left = (playerCenterX - playerDiv.offsetWidth/2) + 'px';
+  playerDiv.style.top  = (playerCenterY - playerDiv.offsetHeight/2) + 'px';
 
   const move = (ev) => {
     ev.preventDefault();
     const touch = ev.touches[0];
-    let x = touch.clientX - fieldRect.left;
-    let y = touch.clientY - fieldRect.top;
-    // 境界制限
-    x = Math.max(0, Math.min(x, field.clientWidth - playerDiv.offsetWidth));
-    y = Math.max(0, Math.min(y, field.clientHeight - playerDiv.offsetHeight));
-    playerDiv.style.left = x + 'px';
-    playerDiv.style.top  = y + 'px';
+    let moveX = touch.clientX - fieldRect.left - offsetX;
+    let moveY = touch.clientY - fieldRect.top - offsetY;
+
+    // 境界制限（中心基準でフィールド内に収める）
+    moveX = Math.max(playerDiv.offsetWidth/2, Math.min(moveX, fw - playerDiv.offsetWidth/2));
+    moveY = Math.max(playerDiv.offsetHeight/2, Math.min(moveY, fh - playerDiv.offsetHeight/2));
+
+    playerDiv.style.left = (moveX - playerDiv.offsetWidth/2) + 'px';
+    playerDiv.style.top  = (moveY - playerDiv.offsetHeight/2) + 'px';
   };
 
   const up = (ev) => {
     const fw = field.clientWidth, fh = field.clientHeight;
     const left = parseFloat(playerDiv.style.left), top = parseFloat(playerDiv.style.top);
+    // 新しい中心座標を%で保存
     states[idx-1].playerPositions[pid] = {
       x: (left + playerDiv.offsetWidth/2) / fw * 100,
       y: (top + playerDiv.offsetHeight/2) / fh * 100
