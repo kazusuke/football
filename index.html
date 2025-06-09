@@ -630,8 +630,8 @@ function onTouchStartPlayer(e, idx) {
     let touchY = ev.touches[0].clientY - fieldRect.top - offsetY;
     
     // 選手要素の左上座標に変換（中心位置から左上に調整）
-    let x = touchX - playerDiv.offsetWidth / 2;
-    let y = touchY - playerDiv.offsetHeight / 2;
+    let x = touchX - playerDiv.offsetWidth / 0;
+    let y = touchY - playerDiv.offsetHeight / 0;
     
     // フィールド境界内に制限
     playerDiv.style.left = Math.max(0, Math.min(x, field.clientWidth - playerDiv.offsetWidth)) + 'px';
