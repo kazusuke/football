@@ -621,40 +621,45 @@ function onTouchStartPlayer(e, idx) {
   const pid = +playerDiv.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
 
-  // 現在の描画位置(px)を取得
+  // フィールドサイズ取得
   const fw = field.clientWidth, fh = field.clientHeight;
   const pos = states[idx-1].playerPositions[pid];
-  // プレイヤーの現在位置（px）
-  let origLeft = pos.x/100*fw - playerDiv.offsetWidth/2;
-  let origTop  = pos.y/100*fh - playerDiv.offsetHeight/2;
 
-  // すでにstyle.left/topがあればそれを使う
-  let styleLeft = playerDiv.style.left && playerDiv.style.left !== '' ? parseFloat(playerDiv.style.left) : origLeft;
-  let styleTop  = playerDiv.style.top  && playerDiv.style.top  !== '' ? parseFloat(playerDiv.style.top)  : origTop;
+  // プレイヤー中心の絶対座標
+  let playerCenterX = pos.x / 100 * fw;
+  let playerCenterY = pos.y / 100 * fh;
 
-  // タッチ開始時点の指と選手左上の差分
+  // タッチ開始時の指の座標
   const startTouch = e.touches[0];
-  const offsetX = startTouch.clientX - (field.getBoundingClientRect().left + styleLeft);
-  const offsetY = startTouch.clientY - (field.getBoundingClientRect().top  + styleTop);
+  const touchX = startTouch.clientX - field.getBoundingClientRect().left;
+  const touchY = startTouch.clientY - field.getBoundingClientRect().top;
+
+  // 指と選手中心の差分
+  const offsetX = touchX - playerCenterX;
+  const offsetY = touchY - playerCenterY;
 
   // 初回タッチ時に正しい位置に配置
-  playerDiv.style.left = styleLeft + 'px';
-  playerDiv.style.top = styleTop + 'px';
+  playerDiv.style.left = (playerCenterX - playerDiv.offsetWidth/2) + 'px';
+  playerDiv.style.top  = (playerCenterY - playerDiv.offsetHeight/2) + 'px';
 
   const move = (ev) => {
     ev.preventDefault();
     const touch = ev.touches[0];
-    let x = touch.clientX - field.getBoundingClientRect().left - offsetX;
-    let y = touch.clientY - field.getBoundingClientRect().top - offsetY;
-    x = Math.max(0, Math.min(x, field.clientWidth - playerDiv.offsetWidth));
-    y = Math.max(0, Math.min(y, field.clientHeight - playerDiv.offsetHeight));
-    playerDiv.style.left = x + 'px';
-    playerDiv.style.top = y + 'px';
+    let moveX = touch.clientX - field.getBoundingClientRect().left - offsetX;
+    let moveY = touch.clientY - field.getBoundingClientRect().top - offsetY;
+
+    // 境界制限（中心基準でフィールド内に収める）
+    moveX = Math.max(playerDiv.offsetWidth/2, Math.min(moveX, fw - playerDiv.offsetWidth/2));
+    moveY = Math.max(playerDiv.offsetHeight/2, Math.min(moveY, fh - playerDiv.offsetHeight/2));
+
+    playerDiv.style.left = (moveX - playerDiv.offsetWidth/2) + 'px';
+    playerDiv.style.top  = (moveY - playerDiv.offsetHeight/2) + 'px';
   };
 
   const up = (ev) => {
     const fw = field.clientWidth, fh = field.clientHeight;
     const left = parseFloat(playerDiv.style.left), top = parseFloat(playerDiv.style.top);
+    // 新しい中心座標を%で保存
     states[idx-1].playerPositions[pid] = {
       x: (left + playerDiv.offsetWidth/2) / fw * 100,
       y: (top + playerDiv.offsetHeight/2) / fh * 100
