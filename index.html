@@ -621,8 +621,8 @@ function onTouchStartPlayer(e, idx) {
   const fieldRect = field.getBoundingClientRect();
   
   // 選手要素の中心からタッチ位置までのオフセット
-  let offsetX = e.touches[0].clientX - (playerRect.left + playerRect.width / 2); + 15;
-  let offsetY = e.touches[0].clientY - (playerRect.top + playerRect.height / 2); + 15;
+  let offsetX = e.touches[0].clientX - (playerRect.left + playerRect.width / 2); + 45;
+  let offsetY = e.touches[0].clientY - (playerRect.top + playerRect.height / 2); + 45;
   
   const move = (ev) => {
     // フィールド座標系でのタッチ位置を計算し、オフセットを考慮
