@@ -607,7 +607,7 @@ function onDropSuspension(e, idx) {
   render(idx);
 }
 
-// タッチ操作
+// タッチ操作（修正版）
 function onTouchStartPlayer(e, idx) {
   e.preventDefault();
   // .player以外がターゲットなら親を取得
@@ -615,25 +615,44 @@ function onTouchStartPlayer(e, idx) {
   if (!playerDiv) return;
   const pid = +playerDiv.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
-  let offsetX = e.touches[0].clientX - playerDiv.getBoundingClientRect().left;
-  let offsetY = e.touches[0].clientY - playerDiv.getBoundingClientRect().top;
+  
+  // 修正：タッチ位置と選手要素の中心位置との差を正確に計算
+  const playerRect = playerDiv.getBoundingClientRect();
+  const fieldRect = field.getBoundingClientRect();
+  
+  // 選手要素の中心からタッチ位置までのオフセット
+  let offsetX = e.touches[0].clientX - (playerRect.left + playerRect.width / 2);
+  let offsetY = e.touches[0].clientY - (playerRect.top + playerRect.height / 2);
+  
   const move = (ev) => {
-    let x = (ev.touches[0].clientX - field.getBoundingClientRect().left - offsetX);
-    let y = (ev.touches[0].clientY - field.getBoundingClientRect().top - offsetY);
-    playerDiv.style.left = Math.max(0, Math.min(x, field.clientWidth-playerDiv.offsetWidth))+'px';
-    playerDiv.style.top = Math.max(0, Math.min(y, field.clientHeight-playerDiv.offsetHeight))+'px';
+    // フィールド座標系でのタッチ位置を計算し、オフセットを考慮
+    let touchX = ev.touches[0].clientX - fieldRect.left - offsetX;
+    let touchY = ev.touches[0].clientY - fieldRect.top - offsetY;
+    
+    // 選手要素の左上座標に変換（中心位置から左上に調整）
+    let x = touchX - playerDiv.offsetWidth / 2;
+    let y = touchY - playerDiv.offsetHeight / 2;
+    
+    // フィールド境界内に制限
+    playerDiv.style.left = Math.max(0, Math.min(x, field.clientWidth - playerDiv.offsetWidth)) + 'px';
+    playerDiv.style.top = Math.max(0, Math.min(y, field.clientHeight - playerDiv.offsetHeight)) + 'px';
   };
+  
   const up = (ev) => {
     let fw = field.clientWidth, fh = field.clientHeight;
     let left = parseInt(playerDiv.style.left), top = parseInt(playerDiv.style.top);
+    
+    // 選手位置を中心座標で保存
     states[idx-1].playerPositions[pid] = {
-      x: (left+playerDiv.offsetWidth/2)/fw*100,
-      y: (top+playerDiv.offsetHeight/2)/fh*100
+      x: (left + playerDiv.offsetWidth / 2) / fw * 100,
+      y: (top + playerDiv.offsetHeight / 2) / fh * 100
     };
+    
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
     render(idx);
   };
+  
   document.addEventListener('touchmove', move, {passive:false});
   document.addEventListener('touchend', up, {passive:false});
 }
