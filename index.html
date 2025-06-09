@@ -628,13 +628,18 @@ function onTouchStartPlayer(e, idx) {
   let origLeft = pos.x/100*fw - playerDiv.offsetWidth/2;
   let origTop  = pos.y/100*fh - playerDiv.offsetHeight/2;
 
+  // すでにstyle.left/topがあればそれを使う
+  let styleLeft = playerDiv.style.left && playerDiv.style.left !== '' ? parseFloat(playerDiv.style.left) : origLeft;
+  let styleTop  = playerDiv.style.top  && playerDiv.style.top  !== '' ? parseFloat(playerDiv.style.top)  : origTop;
+
   // タッチ開始時点の指と選手左上の差分
   const startTouch = e.touches[0];
-  // ここを修正: playerDivの現在のleft/topを使う
-  let styleLeft = playerDiv.style.left ? parseFloat(playerDiv.style.left) : origLeft;
-  let styleTop  = playerDiv.style.top  ? parseFloat(playerDiv.style.top)  : origTop;
   const offsetX = startTouch.clientX - (field.getBoundingClientRect().left + styleLeft);
   const offsetY = startTouch.clientY - (field.getBoundingClientRect().top  + styleTop);
+
+  // 初回タッチ時に正しい位置に配置
+  playerDiv.style.left = styleLeft + 'px';
+  playerDiv.style.top = styleTop + 'px';
 
   const move = (ev) => {
     ev.preventDefault();
