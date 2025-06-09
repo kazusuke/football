@@ -132,7 +132,7 @@
     }
     .player-name {
       text-align: center;
-      font-size: 1.35em;
+      font-size: 2em; /* フォントサイズを大きく */
       font-weight: bold;
       color: #fff;
       text-shadow: 1px 1px 3px #000b;
@@ -651,10 +651,12 @@ function onTouchStartBench(e, idx) {
   e.preventDefault();
   const pid = +e.target.getAttribute('data-id');
   const state = states[idx-1];
-  if (state.playersOnField.length >= 11) return;
-  state.playersOnField.push(pid);
-  state.playerPositions[pid] = {x: 50, y: 50};
-  render(idx);
+  // ★移動回数制限を撤廃（11人制限を削除）
+  if (!state.playersOnField.includes(pid)) {
+    state.playersOnField.push(pid);
+    state.playerPositions[pid] = {x: 50, y: 50};
+    render(idx);
+  }
 }
 function onTouchStartSuspension(e, idx) {
   e.preventDefault();
