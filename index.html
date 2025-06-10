@@ -346,7 +346,8 @@
 <div id="custom-menu" style="display:none; position:fixed; z-index:2000; background:#fff; border-radius:10px; box-shadow:0 2px 12px #0005; min-width:120px; font-size:1.1em;">
   <div id="menu-to-field" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;">フィールドへ</div>
   <div id="menu-to-bench" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;">控えへ</div>
-  <div id="menu-to-suspension" style="padding:12px; cursor:pointer;">出場停止へ</div>
+  <div id="menu-to-suspension" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;">出場停止へ</div>
+  <div id="menu-edit-player" style="padding:12px; cursor:pointer; color:#217dbb; font-weight:bold;">選手情報変更</div>
 </div>
 <script>
 const PLAYERS = [
@@ -500,42 +501,73 @@ function render(idx) {
     suspension.appendChild(div);
   });
 
-  setTimeout(() => {
-    addLongPressContextMenu(`#field${idx} .player`, e => {
-      e.preventDefault();
-      const pid = +e.target.closest('.player').getAttribute('data-id');
-      // フィールド上の選手長押しでメニュー表示
-      showCustomMenu(
-        e.touches ? e.touches[0].clientX : 0,
-        e.touches ? e.touches[0].clientY : 0,
-        pid,
-        idx,
-        'field'
-      );
-    });
-    addLongPressContextMenu(`#bench${idx} .bench-player`, e => {
-      e.preventDefault();
-      const pid = +e.target.closest('.bench-player').getAttribute('data-id');
-      showCustomMenu(
-        e.touches ? e.touches[0].clientX : 0,
-        e.touches ? e.touches[0].clientY : 0,
-        pid,
-        idx,
-        'bench'
-      );
-    });
-    addLongPressContextMenu(`#suspension${idx} .suspension-player`, e => {
-      e.preventDefault();
-      const pid = +e.target.closest('.suspension-player').getAttribute('data-id');
-      showCustomMenu(
-        e.touches ? e.touches[0].clientX : 0,
-        e.touches ? e.touches[0].clientY : 0,
-        pid,
-        idx,
-        'suspension'
-      );
-    });
-  }, 10);
+  // 長押しメニューを各選手に付与
+  // フィールド
+  field.querySelectorAll('.player').forEach(div => {
+    div.ontouchstart = null;
+    div.ontouchend = null;
+    div.ontouchmove = null;
+    let timer = null;
+    div.addEventListener('touchstart', function(e) {
+      timer = setTimeout(() => {
+        const touch = e.touches[0];
+        const pid = +div.getAttribute('data-id');
+        showCustomMenu(
+          touch.clientX,
+          touch.clientY,
+          pid,
+          idx,
+          'field'
+        );
+      }, 600);
+    }, {passive:false});
+    div.addEventListener('touchend', function() { clearTimeout(timer); });
+    div.addEventListener('touchmove', function() { clearTimeout(timer); });
+  });
+  // 控え
+  bench.querySelectorAll('.bench-player').forEach(div => {
+    div.ontouchstart = null;
+    div.ontouchend = null;
+    div.ontouchmove = null;
+    let timer = null;
+    div.addEventListener('touchstart', function(e) {
+      timer = setTimeout(() => {
+        const touch = e.touches[0];
+        const pid = +div.getAttribute('data-id');
+        showCustomMenu(
+          touch.clientX,
+          touch.clientY,
+          pid,
+          idx,
+          'bench'
+        );
+      }, 600);
+    }, {passive:false});
+    div.addEventListener('touchend', function() { clearTimeout(timer); });
+    div.addEventListener('touchmove', function() { clearTimeout(timer); });
+  });
+  // 出場停止
+  suspension.querySelectorAll('.suspension-player').forEach(div => {
+    div.ontouchstart = null;
+    div.ontouchend = null;
+    div.ontouchmove = null;
+    let timer = null;
+    div.addEventListener('touchstart', function(e) {
+      timer = setTimeout(() => {
+        const touch = e.touches[0];
+        const pid = +div.getAttribute('data-id');
+        showCustomMenu(
+          touch.clientX,
+          touch.clientY,
+          pid,
+          idx,
+          'suspension'
+        );
+      }, 600);
+    }, {passive:false});
+    div.addEventListener('touchend', function() { clearTimeout(timer); });
+    div.addEventListener('touchmove', function() { clearTimeout(timer); });
+  });
 }
 
 // ドラッグデータ
@@ -736,6 +768,7 @@ function showCustomMenu(x, y, pid, idx, from) {
   document.getElementById('menu-to-field').style.display = (from === 'field') ? 'none' : '';
   document.getElementById('menu-to-bench').style.display = (from === 'bench') ? 'none' : '';
   document.getElementById('menu-to-suspension').style.display = (from === 'suspension') ? 'none' : '';
+  document.getElementById('menu-edit-player').style.display = '';
   menu.style.display = 'block';
   menu.style.left = x + 'px';
   menu.style.top = y + 'px';
@@ -783,6 +816,11 @@ document.getElementById('menu-to-suspension').onclick = function() {
     render(idx);
   }
   hideCustomMenu();
+};
+document.getElementById('menu-edit-player').onclick = function() {
+  const { pid } = currentLongPress;
+  hideCustomMenu();
+  openEditModal(pid);
 };
 
 // タッチ以外の場所をタップしたらメニューを閉じる
