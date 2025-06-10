@@ -607,33 +607,29 @@ function onDropSuspension(e, idx) {
   render(idx);
 }
 
-// タッチ操作
 function onTouchStartPlayer(e, idx) {
   e.preventDefault();
   let playerDiv = e.target.closest('.player');
   if (!playerDiv) return;
   const pid = +playerDiv.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
-
-  // フィールドサイズ取得
   const fw = field.clientWidth, fh = field.clientHeight;
   const pos = states[idx-1].playerPositions[pid];
 
-  // プレイヤー中心の絶対座標
+  // 選手の中心点（フィールド左上基準）
   let playerCenterX = pos.x / 100 * fw;
   let playerCenterY = pos.y / 100 * fh;
 
-  // タッチ開始時の指の座標（フィールド左上基準）
-  const startTouch = e.touches[0];
+  // タッチ位置（フィールド左上基準）
   const fieldRect = field.getBoundingClientRect();
-  const touchX = startTouch.clientX - fieldRect.left;
-  const touchY = startTouch.clientY - fieldRect.top;
+  const touchX = e.touches[0].clientX - fieldRect.left;
+  const touchY = e.touches[0].clientY - fieldRect.top;
 
   // 指と選手中心の差分
   const offsetX = touchX - playerCenterX;
   const offsetY = touchY - playerCenterY;
 
-  // 初回タッチ時に正しい位置に配置
+  // 選手を正しい位置に配置
   playerDiv.style.left = (playerCenterX - playerDiv.offsetWidth/2) + 'px';
   playerDiv.style.top  = (playerCenterY - playerDiv.offsetHeight/2) + 'px';
 
@@ -647,8 +643,9 @@ function onTouchStartPlayer(e, idx) {
     moveX = Math.max(playerDiv.offsetWidth/2, Math.min(moveX, fw - playerDiv.offsetWidth/2));
     moveY = Math.max(playerDiv.offsetHeight/2, Math.min(moveY, fh - playerDiv.offsetHeight/2));
 
-    playerDiv.style.left = (moveX - playerDiv.offsetWidth/2 + 10) + 'px';
-    playerDiv.style.top  = (moveY - playerDiv.offsetHeight/2 + 10) + 'px';
+    // 選手の中心点が指の位置に合うように調整
+    playerDiv.style.left = (moveX - playerDiv.offsetWidth/2) + 'px';
+    playerDiv.style.top  = (moveY - playerDiv.offsetHeight/2) + 'px';
   };
 
   const up = (ev) => {
@@ -668,6 +665,8 @@ function onTouchStartPlayer(e, idx) {
 
   document.addEventListener('touchmove', move, {passive:false});
   document.addEventListener('touchend', up, {passive:false});
+}
+
 }
 function onTouchStartBench(e, idx) {
   e.preventDefault();
