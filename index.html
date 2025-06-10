@@ -501,15 +501,39 @@ function render(idx) {
   });
 
   setTimeout(() => {
+    addLongPressContextMenu(`#field${idx} .player`, e => {
+      e.preventDefault();
+      const pid = +e.target.closest('.player').getAttribute('data-id');
+      // フィールド上の選手長押しでメニュー表示
+      showCustomMenu(
+        e.touches ? e.touches[0].clientX : 0,
+        e.touches ? e.touches[0].clientY : 0,
+        pid,
+        idx,
+        'field'
+      );
+    });
     addLongPressContextMenu(`#bench${idx} .bench-player`, e => {
       e.preventDefault();
       const pid = +e.target.closest('.bench-player').getAttribute('data-id');
-      moveToSuspension(pid, idx);
+      showCustomMenu(
+        e.touches ? e.touches[0].clientX : 0,
+        e.touches ? e.touches[0].clientY : 0,
+        pid,
+        idx,
+        'bench'
+      );
     });
     addLongPressContextMenu(`#suspension${idx} .suspension-player`, e => {
       e.preventDefault();
       const pid = +e.target.closest('.suspension-player').getAttribute('data-id');
-      moveToBench(pid, idx);
+      showCustomMenu(
+        e.touches ? e.touches[0].clientX : 0,
+        e.touches ? e.touches[0].clientY : 0,
+        pid,
+        idx,
+        'suspension'
+      );
     });
   }, 10);
 }
