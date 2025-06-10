@@ -647,8 +647,8 @@ function onTouchStartPlayer(e, idx) {
     moveX = Math.max(playerDiv.offsetWidth/2, Math.min(moveX, fw - playerDiv.offsetWidth/2));
     moveY = Math.max(playerDiv.offsetHeight/2, Math.min(moveY, fh - playerDiv.offsetHeight/2));
 
-    playerDiv.style.left = (moveX - playerDiv.offsetWidth/2) + 'px';
-    playerDiv.style.top  = (moveY - playerDiv.offsetHeight/2) + 'px';
+    playerDiv.style.left = (moveX - playerDiv.offsetWidth/2 + 10) + 'px';
+    playerDiv.style.top  = (moveY - playerDiv.offsetHeight/2 + 10) + 'px';
   };
 
   const up = (ev) => {
