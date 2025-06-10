@@ -270,6 +270,16 @@
       .bench-player, .suspension-player { padding: 3px 0 2px 0; }
       .bench-area { min-width: unset; padding: 8px 2px; }
       .reset-btn { font-size: 0.95em; padding: 7px 10px; }
+
+      /* 追加: フィールド横スクロール対応 */
+      .field-area {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .field {
+        min-width: 600px;
+        /* 必要に応じて幅を調整 */
+      }
     }
   </style>
 </head>
