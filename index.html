@@ -271,14 +271,14 @@
       .bench-area { min-width: unset; padding: 8px 2px; }
       .reset-btn { font-size: 0.95em; padding: 7px 10px; }
 
-      /* 追加: フィールド横スクロール対応 */
+      /* 追加: フィールド縦スクロール対応 */
       .field-area {
-        overflow-x: auto;
+        overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        max-height: 70vh; /* 必要に応じて調整 */
       }
       .field {
-        min-width: 600px;
-        /* 必要に応じて幅を調整 */
+        min-height: 600px; /* 必要に応じて調整 */
       }
     }
   </style>
