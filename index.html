@@ -270,16 +270,6 @@
       .bench-player, .suspension-player { padding: 3px 0 2px 0; }
       .bench-area { min-width: unset; padding: 8px 2px; }
       .reset-btn { font-size: 0.95em; padding: 7px 10px; }
-
-      /* 追加: フィールド縦スクロール対応 */
-      .field-area {
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        max-height: 70vh; /* 必要に応じて調整 */
-      }
-      .field {
-        min-height: 600px; /* 必要に応じて調整 */
-      }
     }
   </style>
 </head>
@@ -625,52 +615,21 @@ function onTouchStartPlayer(e, idx) {
   if (!playerDiv) return;
   const pid = +playerDiv.getAttribute('data-id');
   const field = document.getElementById('field'+idx);
-
-  // フィールドサイズ取得
-  const fw = field.clientWidth, fh = field.clientHeight;
-  const pos = states[idx-1].playerPositions[pid];
-
-  // プレイヤー中心の絶対座標
-  let playerCenterX = pos.x / 100 * fw;
-  let playerCenterY = pos.y / 100 * fh;
-
-  // タッチ開始時の指の座標（フィールド左上基準）
-  const startTouch = e.touches[0];
-  const fieldRect = field.getBoundingClientRect();
-  const touchX = startTouch.clientX - fieldRect.left;
-  const touchY = startTouch.clientY - fieldRect.top;
-
-  // 指と選手中心の差分（中心基準で補正）
-  const offsetX = touchX - (playerDiv.offsetLeft + playerDiv.offsetWidth/2);
-  const offsetY = touchY - (playerDiv.offsetTop + playerDiv.offsetHeight/2);
-
-  // 初回タッチ時に正しい位置に配置
-  playerDiv.style.left = (playerCenterX - playerDiv.offsetWidth/2) + 'px';
-  playerDiv.style.top  = (playerCenterY - playerDiv.offsetHeight/2) + 'px';
-
+  let offsetX = e.touches[0].clientX - playerDiv.getBoundingClientRect().left;
+  let offsetY = e.touches[0].clientY - playerDiv.getBoundingClientRect().top;
   const move = (ev) => {
-    ev.preventDefault();
-    const touch = ev.touches[0];
-    let moveX = touch.clientX - fieldRect.left - offsetX;
-    let moveY = touch.clientY - fieldRect.top - offsetY;
-
-    // 境界制限（中心基準でフィールド内に収める）
-    moveX = Math.max(playerDiv.offsetWidth/2, Math.min(moveX, fw - playerDiv.offsetWidth/2));
-    moveY = Math.max(playerDiv.offsetHeight/2, Math.min(moveY, fh - playerDiv.offsetHeight/2));
-
-    playerDiv.style.left = (moveX - playerDiv.offsetWidth/2) + 'px';
-    playerDiv.style.top  = (moveY - playerDiv.offsetHeight/2) + 'px';
+    let x = (ev.touches[0].clientX - field.getBoundingClientRect().left - offsetX);
+    let y = (ev.touches[0].clientY - field.getBoundingClientRect().top - offsetY);
+    playerDiv.style.left = Math.max(0, Math.min(x, field.clientWidth-playerDiv.offsetWidth))+'px';
+    playerDiv.style.top = Math.max(0, Math.min(y, field.clientHeight-playerDiv.offsetHeight))+'px';
   };
-
   const up = (ev) => {
     let fw = field.clientWidth, fh = field.clientHeight;
-    let left = parseFloat(playerDiv.style.left), top = parseFloat(playerDiv.style.top);
+    let left = parseInt(playerDiv.style.left), top = parseInt(playerDiv.style.top);
     states[idx-1].playerPositions[pid] = {
-      x: (left + playerDiv.offsetWidth/2)/fw*100,
-      y: (top + playerDiv.offsetHeight/2)/fh*100
+      x: (left+playerDiv.offsetWidth/2)/fw*100,
+      y: (top+playerDiv.offsetHeight/2)/fh*100
     };
-    playerDiv.style.left = '';
-    playerDiv.style.top = '';
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
     render(idx);
