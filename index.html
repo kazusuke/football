@@ -623,15 +623,13 @@ function onTouchStartPlayer(e, idx) {
     playerDiv.style.left = Math.max(0, Math.min(x, field.clientWidth-playerDiv.offsetWidth))+'px';
     playerDiv.style.top = Math.max(0, Math.min(y, field.clientHeight-playerDiv.offsetHeight))+'px';
   };
-const up = (ev) => {
-  let fw = field.clientWidth, fh = field.clientHeight;
-  let left = parseInt(playerDiv.style.left), top = parseInt(playerDiv.style.top);
-  states[idx-1].playerPositions[pid] = {
-    x: (left + 35) / fw * 100,  // 35は選手要素の幅の半分(70/2)
-    y: (top + 40) / fh * 100    // 40は選手要素の高さの半分(80/2)
-  };
-  // ...
-};
+  const up = (ev) => {
+    let fw = field.clientWidth, fh = field.clientHeight;
+    let left = parseInt(playerDiv.style.left), top = parseInt(playerDiv.style.top);
+    states[idx-1].playerPositions[pid] = {
+      x: (left+playerDiv.offsetWidth/2)/fw*100,
+      y: (top+playerDiv.offsetHeight/2)/fh*100
+    };
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
     render(idx);
