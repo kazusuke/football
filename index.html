@@ -491,14 +491,30 @@ function render(idx) {
     div.setAttribute('data-id', p.id);
     div.innerHTML = `<div class="player-circle">${p.number}</div>
       <div class="player-name"${idx===1?' style="cursor:pointer; text-decoration:underline dotted;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
-    div.addEventListener('dragstart', e=>onDragStartSuspension(e, idx));
-    div.addEventListener('dragend', e=>onDragEndSuspension(e, idx));
-    div.addEventListener('touchstart', e=>onTouchStartSuspension(e, idx), {passive:false});
-    // ↓この contextmenu イベントだけ残し、スワイプで控えに移動する処理は削除
-    // div.addEventListener('contextmenu', e=>{
-    //   e.preventDefault();
-    //   moveToBench(p.id, idx);
-    // });
+    // 移動系イベントリスナーを削除
+    // div.addEventListener('dragstart', e=>onDragStartSuspension(e, idx));
+    // div.addEventListener('dragend', e=>onDragEndSuspension(e, idx));
+    // div.addEventListener('touchstart', e=>onTouchStartSuspension(e, idx), {passive:false});
+    // カスタムメニュー用の長押しのみ残す
+    let timer = null;
+    div.ontouchstart = null;
+    div.ontouchend = null;
+    div.ontouchmove = null;
+    div.addEventListener('touchstart', function(e) {
+      timer = setTimeout(() => {
+        const touch = e.touches[0];
+        const pid = +div.getAttribute('data-id');
+        showCustomMenu(
+          touch.clientX,
+          touch.clientY,
+          pid,
+          idx,
+          'suspension'
+        );
+      }, 600);
+    }, {passive:false});
+    div.addEventListener('touchend', function() { clearTimeout(timer); });
+    div.addEventListener('touchmove', function() { clearTimeout(timer); });
     suspension.appendChild(div);
   });
 
