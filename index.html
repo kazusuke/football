@@ -494,10 +494,11 @@ function render(idx) {
     div.addEventListener('dragstart', e=>onDragStartSuspension(e, idx));
     div.addEventListener('dragend', e=>onDragEndSuspension(e, idx));
     div.addEventListener('touchstart', e=>onTouchStartSuspension(e, idx), {passive:false});
-    div.addEventListener('contextmenu', e=>{
-      e.preventDefault();
-      moveToBench(p.id, idx);
-    });
+    // ↓この contextmenu イベントだけ残し、スワイプで控えに移動する処理は削除
+    // div.addEventListener('contextmenu', e=>{
+    //   e.preventDefault();
+    //   moveToBench(p.id, idx);
+    // });
     suspension.appendChild(div);
   });
 
