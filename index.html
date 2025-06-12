@@ -801,12 +801,22 @@ function hideCustomMenu() {
 document.getElementById('menu-to-field').onclick = function() {
   const { pid, idx, from } = currentLongPress;
   const state = states[idx-1];
-  if (from !== 'field' && state.playersOnField.length < 11) {
-    // 追加前に控え・出場停止から除外
-    state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
-    // フィールドに追加
+  // すでにフィールドにいる場合は何もしない
+  if (state.playersOnField.includes(pid)) {
+    hideCustomMenu();
+    return;
+  }
+  // 11人未満なら追加
+  if (state.playersOnField.length < 11) {
+    // 出場停止から来た場合は出場停止リストから除外
+    if (from === 'suspension') {
+      state.suspensionPlayers = state.suspensionPlayers.filter(id => id !== pid);
+    }
+    // 控えから来た場合は何もしなくてOK（控えはplayersOnField, suspensionPlayers以外）
+// playersOnFieldに追加
     state.playersOnField.push(pid);
-    state.playerPositions[pid] = {x: 50, y: 50};
+    // 位置を初期化（中央に配置）
+    state.playerPositions[pid] = { x: 50, y: 50 };
     render(idx);
   }
   hideCustomMenu();
