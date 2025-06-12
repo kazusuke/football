@@ -524,66 +524,27 @@ function render(idx) {
     div.ontouchstart = null;
     div.ontouchend = null;
     div.ontouchmove = null;
-    let timer = null;
     div.addEventListener('touchstart', function(e) {
-      timer = setTimeout(() => {
-        const touch = e.touches[0];
-        const pid = +div.getAttribute('data-id');
-        showCustomMenu(
-          touch.clientX,
-          touch.clientY,
-          pid,
-          idx,
-          'field'
-        );
-      }, 600);
+      onTouchDragStart(e, idx, 'field');
     }, {passive:false});
-    div.addEventListener('touchend', function() { clearTimeout(timer); });
-    div.addEventListener('touchmove', function() { clearTimeout(timer); });
   });
   // 控え
   bench.querySelectorAll('.bench-player').forEach(div => {
     div.ontouchstart = null;
     div.ontouchend = null;
     div.ontouchmove = null;
-    let timer = null;
     div.addEventListener('touchstart', function(e) {
-      timer = setTimeout(() => {
-        const touch = e.touches[0];
-        const pid = +div.getAttribute('data-id');
-        showCustomMenu(
-          touch.clientX,
-          touch.clientY,
-          pid,
-          idx,
-          'bench'
-        );
-      }, 600);
+      onTouchDragStart(e, idx, 'bench');
     }, {passive:false});
-    div.addEventListener('touchend', function() { clearTimeout(timer); });
-    div.addEventListener('touchmove', function() { clearTimeout(timer); });
   });
   // 出場停止
   suspension.querySelectorAll('.suspension-player').forEach(div => {
     div.ontouchstart = null;
     div.ontouchend = null;
     div.ontouchmove = null;
-    let timer = null;
     div.addEventListener('touchstart', function(e) {
-      timer = setTimeout(() => {
-        const touch = e.touches[0];
-        const pid = +div.getAttribute('data-id');
-        showCustomMenu(
-          touch.clientX,
-          touch.clientY,
-          pid,
-          idx,
-          'suspension'
-        );
-      }, 600);
+      onTouchDragStart(e, idx, 'suspension');
     }, {passive:false});
-    div.addEventListener('touchend', function() { clearTimeout(timer); });
-    div.addEventListener('touchmove', function() { clearTimeout(timer); });
   });
 }
 
