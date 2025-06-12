@@ -541,9 +541,9 @@ function enableFieldDrag(idx) {
 
       touchMoveHandler = function(ev) {
         if (draggingId == null) return;
+        ev.preventDefault(); // ← これを追加
         const moveX = ev.touches[0].clientX - startX;
         const moveY = ev.touches[0].clientY - startY;
-        // 一時的に見た目だけ動かす
         div.style.left = (origX + moveX) + "px";
         div.style.top = (origY + moveY) + "px";
       };
