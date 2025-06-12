@@ -511,8 +511,10 @@ function render(idx) {
 function enableFieldDrag(idx) {
   const field = document.getElementById('field'+idx);
   let draggingId = null;
+  let touchMoveHandler = null;
 
   field.querySelectorAll('.player').forEach(div => {
+    // PC用ドラッグ
     div.ondragstart = function(e) {
       draggingId = +div.getAttribute('data-id');
       div.classList.add('dragging');
@@ -524,6 +526,45 @@ function enableFieldDrag(idx) {
     div.ondragend = function() {
       draggingId = null;
       div.classList.remove('dragging');
+    };
+
+    // モバイル用タッチドラッグ
+    div.ontouchstart = function(e) {
+      if (e.touches.length !== 1) return;
+      draggingId = +div.getAttribute('data-id');
+      div.classList.add('dragging');
+      const rect = field.getBoundingClientRect();
+      const startX = e.touches[0].clientX;
+      const startY = e.touches[0].clientY;
+      const origX = parseFloat(div.style.left);
+      const origY = parseFloat(div.style.top);
+
+      touchMoveHandler = function(ev) {
+        if (draggingId == null) return;
+        const moveX = ev.touches[0].clientX - startX;
+        const moveY = ev.touches[0].clientY - startY;
+        // 一時的に見た目だけ動かす
+        div.style.left = (origX + moveX) + "px";
+        div.style.top = (origY + moveY) + "px";
+      };
+      document.addEventListener('touchmove', touchMoveHandler, {passive:false});
+    };
+    div.ontouchend = function(e) {
+      if (draggingId == null) return;
+      div.classList.remove('dragging');
+      document.removeEventListener('touchmove', touchMoveHandler, {passive:false});
+      // 最終位置を保存
+      const rect = field.getBoundingClientRect();
+      const left = parseFloat(div.style.left);
+      const top = parseFloat(div.style.top);
+      const fw = field.clientWidth, fh = field.clientHeight;
+      // 逆算してx,y(%)を求める
+      const x = ((left + 35) / fw) * 100;
+      const y = ((top + 40) / fh) * 100;
+      const state = states[idx-1];
+      state.playerPositions[draggingId] = { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+      draggingId = null;
+      render(idx);
     };
   });
 
