@@ -721,6 +721,19 @@ function movePlayersToFormation(idx) {
   }
   render(idx);
 }
+
+/**
+ * 上の状態を下にコピーする
+ */
+function copyFromUpper() {
+  // states[0] → states[1] へディープコピー
+  states[1] = {
+    playersOnField: [...states[0].playersOnField],
+    playerPositions: JSON.parse(JSON.stringify(states[0].playerPositions)),
+    suspensionPlayers: [...states[0].suspensionPlayers]
+  };
+  renderAll();
+}
   </script>
 </body>
 </html>
