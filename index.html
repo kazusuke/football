@@ -802,9 +802,13 @@ document.getElementById('menu-to-field').onclick = function() {
   const { pid, idx, from } = currentLongPress;
   const state = states[idx-1];
   if (from !== 'field' && state.playersOnField.length < 11) {
-    state.playersOnField.push(pid);
+    // 追加前に控え・出場停止から除外
+    state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
+    // 控えリストから除外（playersOnField, suspensionPlayers以外が控えなのでOK）
+    if (!state.playersOnField.includes(pid)) {
+      state.playersOnField.push(pid);
+    }
     state.playerPositions[pid] = {x: 50, y: 50};
-    if (from === 'suspension') state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
     render(idx);
   }
   hideCustomMenu();
