@@ -167,26 +167,36 @@
     <div class="fields">
       <div class="field-area" id="field1">
         <span class="field-label">フィールドA</span>
-        <svg class="field-svg" viewBox="0 0 1000 600">
-          <rect x="0" y="0" width="1000" height="600" rx="30" fill="#388e3c"/>
-          <rect x="50" y="50" width="900" height="500" rx="20" fill="none" stroke="#fff" stroke-width="6"/>
-          <rect x="50" y="200" width="120" height="200" fill="none" stroke="#fff" stroke-width="4"/>
-          <rect x="830" y="200" width="120" height="200" fill="none" stroke="#fff" stroke-width="4"/>
-          <circle cx="500" cy="300" r="80" fill="none" stroke="#fff" stroke-width="4"/>
-          <line x1="500" y1="50" x2="500" y2="550" stroke="#fff" stroke-width="4"/>
-          <circle cx="500" cy="300" r="8" fill="#fff"/>
+        <svg class="field-svg" viewBox="0 0 500 600">
+          <rect x="0" y="0" width="500" height="600" rx="30" fill="#388e3c"/>
+          <rect x="20" y="50" width="460" height="500" rx="20" fill="none" stroke="#fff" stroke-width="6"/>
+          <!-- ペナルティエリア -->
+          <rect x="20" y="180" width="120" height="240" fill="none" stroke="#fff" stroke-width="4"/>
+          <!-- ゴールエリア -->
+          <rect x="20" y="240" width="40" height="120" fill="none" stroke="#fff" stroke-width="4"/>
+          <!-- ペナルティスポット -->
+          <circle cx="100" cy="300" r="8" fill="#fff"/>
+          <!-- センターサークル（半円） -->
+          <path d="M250,300 m0,-80 a80,80 0 0,1 0,160" fill="none" stroke="#fff" stroke-width="4"/>
+          <!-- タッチライン -->
+          <line x1="250" y1="50" x2="250" y2="550" stroke="#fff" stroke-width="4"/>
         </svg>
       </div>
       <div class="field-area" id="field2">
         <span class="field-label">フィールドB</span>
-        <svg class="field-svg" viewBox="0 0 1000 600">
-          <rect x="0" y="0" width="1000" height="600" rx="30" fill="#388e3c"/>
-          <rect x="50" y="50" width="900" height="500" rx="20" fill="none" stroke="#fff" stroke-width="6"/>
-          <rect x="50" y="200" width="120" height="200" fill="none" stroke="#fff" stroke-width="4"/>
-          <rect x="830" y="200" width="120" height="200" fill="none" stroke="#fff" stroke-width="4"/>
-          <circle cx="500" cy="300" r="80" fill="none" stroke="#fff" stroke-width="4"/>
-          <line x1="500" y1="50" x2="500" y2="550" stroke="#fff" stroke-width="4"/>
-          <circle cx="500" cy="300" r="8" fill="#fff"/>
+        <svg class="field-svg" viewBox="0 0 500 600">
+          <rect x="0" y="0" width="500" height="600" rx="30" fill="#388e3c"/>
+          <rect x="20" y="50" width="460" height="500" rx="20" fill="none" stroke="#fff" stroke-width="6"/>
+          <!-- ペナルティエリア -->
+          <rect x="20" y="180" width="120" height="240" fill="none" stroke="#fff" stroke-width="4"/>
+          <!-- ゴールエリア -->
+          <rect x="20" y="240" width="40" height="120" fill="none" stroke="#fff" stroke-width="4"/>
+          <!-- ペナルティスポット -->
+          <circle cx="100" cy="300" r="8" fill="#fff"/>
+          <!-- センターサークル（半円） -->
+          <path d="M250,300 m0,-80 a80,80 0 0,1 0,160" fill="none" stroke="#fff" stroke-width="4"/>
+          <!-- タッチライン -->
+          <line x1="250" y1="50" x2="250" y2="550" stroke="#fff" stroke-width="4"/>
         </svg>
       </div>
     </div>
