@@ -2,888 +2,526 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>作戦ボード</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>戦術ボード - Tacticalista風</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <style>
     body {
-      background: #e2eafc;
-      font-family: sans-serif;
       margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a1a;
+      color: #fff;
     }
-    .main {
+    .container {
       display: flex;
-      width: 100vw;
-      height: 95vh;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem;
       max-width: 1200px;
-      min-height: 700px;
-      margin: 0 auto;
+      margin: auto;
+    }
+    @media (min-width: 900px) {
+      .fields {
+        flex-direction: row;
+      }
+    }
+    .fields {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
     }
     .field-area {
-      flex: 3;
+      flex: 1;
+      background: #2e7d32;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px #0008;
+      position: relative;
+      min-height: 400px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .field-svg {
+      width: 100%;
+      height: 400px;
+      display: block;
+    }
+    .players-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .player-chip {
+      background: #fff;
+      color: #222;
+      border-radius: 16px;
+      padding: 0.3em 0.8em;
+      font-size: 0.95em;
+      cursor: grab;
+      user-select: none;
+      border: 2px solid #1976d2;
+      margin-bottom: 0.2em;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .player-chip[data-status="bench"] {
+      border-color: #888;
+      background: #eee;
+      color: #888;
+    }
+    .player-chip[data-status="suspended"] {
+      border-color: #d32f2f;
+      background: #ffcdd2;
+      color: #b71c1c;
+      text-decoration: line-through;
+    }
+    .player-dot {
+      width: 1.6em;
+      height: 1.6em;
+      border-radius: 50%;
+      background: #1976d2;
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
+      font-weight: bold;
+      font-size: 1em;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px #0004;
+      cursor: grab;
+      position: absolute;
+      transition: box-shadow 0.2s;
+      z-index: 2;
+      touch-action: none;
     }
-    .field {
-      position: relative;
-      width: 100%;
-      max-width: 700px;
-      aspect-ratio: 1/1.1;
-      background: linear-gradient(135deg, #27ae60 70%, #145a32 100%);
-      border: 4px solid #fff;
-      border-radius: 18px;
-      box-shadow: 0 4px 16px #0002;
+    .player-dot[data-status="bench"] {
+      background: #888;
+      color: #fff;
+      border-color: #ccc;
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    .player-dot[data-status="suspended"] {
+      background: #d32f2f;
+      color: #fff;
+      border-color: #fff;
+      opacity: 0.6;
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+    .field-label {
+      position: absolute;
+      top: 8px;
+      left: 16px;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 1px 4px #000a;
+      z-index: 10;
+    }
+    .menu {
+      position: absolute;
+      background: #fff;
+      color: #222;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px #0008;
+      min-width: 120px;
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      font-size: 1em;
       overflow: hidden;
     }
-    .field .half-line {
-      position: absolute;
-      left: 0; right: 0;
-      top: 25%;
-      height: 0;
-      border-top: 3px solid #fff;
-      z-index: 1;
+    .menu.active {
+      display: flex;
     }
-    .field .center-semicircle {
-      position: absolute;
-      left: 50%;
-      top: 25%;
-      width: 120px;
-      height: 60px;
-      border-bottom: 3px solid #fff;
-      border-radius: 0 0 60px 60px/0 0 60px 60px;
-      transform: translateX(-50%);
-      z-index: 2;
+    .menu button {
       background: none;
-      pointer-events: none;
-    }
-    .field .goal-area {
-      position: absolute;
-      left: 50%;
-      bottom: 0;
-      width: 110px;
-      height: 33px;
-      border: 3px solid #fff;
-      border-bottom: none;
-      transform: translateX(-50%);
-      z-index: 2;
-      background: none;
-    }
-    .field .penalty-area {
-      position: absolute;
-      left: 50%;
-      bottom: 0;
-      width: 220px;
-      height: 88px;
-      border: 3px solid #fff;
-      border-bottom: none;
-      transform: translateX(-50%);
-      z-index: 2;
-      background: none;
-    }
-    .field .goal-line {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      height: 0;
-      border-top: 5px solid #fff;
-      z-index: 2;
-    }
-    .field .goal {
-      position: absolute;
-      left: 50%;
-      bottom: -10px;
-      width: 44px;
-      height: 10px;
-      background: #fff;
-      border-radius: 0 0 8px 8px;
-      transform: translateX(-50%);
-      z-index: 3;
-    }
-    .player {
-      position: absolute;
-      width: 70px;
-      height: 80px;
-      cursor: grab;
-      user-select: none;
-      z-index: 10;
-      transition: transform .15s;
-    }
-    .player.dragging {
-      opacity: 0.7;
-      z-index: 99;
-      transform: scale(1.08);
-    }
-    .player-circle {
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: linear-gradient(145deg, #3498db, #2980b9);
-      border: 4px solid #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 2em;
-      font-weight: bold;
-      margin: 0 auto;
-      box-shadow: 0 3px 10px #0005;
-    }
-    .player-name {
-      text-align: center;
-      font-size: 1.8em;
-      font-weight: bold;
-      color: #fff;
-      text-shadow: 1px 1px 3px #000b;
-      margin-top: 4px;
-    }
-    .bench-area {
-      flex: 1;
-      background: #f8fafc;
-      border-left: 3px solid #b3c6e0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 18px 6px;
-      min-width: 220px;
-      overflow-y: auto;
-    }
-    .bench-title {
-      font-size: 1.2em;
-      font-weight: bold;
-      color: #277;
-      margin-bottom: 12px;
-    }
-    .bench-list, .suspension-list {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .bench-player, .suspension-player {
-      width: 90%;
-      margin: 0 auto;
-      background: #e3f0fc;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px #0001;
-      padding: 7px 0 4px 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: grab;
-      transition: background .18s;
-    }
-    .bench-player.dragging, .suspension-player.dragging {
-      opacity: 0.7;
-      background: #b4e0fc;
-    }
-    .bench-player .player-circle, .suspension-player .player-circle {
-      background: linear-gradient(145deg, #6c757d, #495057);
-      border: 3px solid #fff;
-      font-size: 1.5em;
-    }
-    .bench-player .player-name, .suspension-player .player-name {
-      color: #333;
-      font-size: 1.4em;
-      text-shadow: none;
-    }
-    .suspension-title {
-      font-size: 1.1em;
-      font-weight: bold;
-      color: #a33;
-      margin: 18px 0 8px 0;
-      text-align: center;
-    }
-    .reset-btn {
-      margin: 18px auto 0 auto;
-      display: block;
-      padding: 10px 18px;
-      font-size: 1.1em;
-      background: #3498db;
-      color: #fff;
       border: none;
-      border-radius: 8px;
-      font-weight: bold;
+      padding: 0.7em 1em;
+      text-align: left;
       cursor: pointer;
-      transition: background .18s;
-    }
-    .reset-btn:hover {
-      background: #217dbb;
-    }
-    #edit-modal {
-      display: none;
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #0008;
-      z-index: 999;
-      align-items: center;
-      justify-content: center;
-    }
-    #edit-modal .modal-inner {
-      background: #fff;
-      padding: 24px 32px;
-      border-radius: 12px;
-      min-width: 300px;
-      box-shadow: 0 6px 24px #0005;
-    }
-    #edit-modal label {
-      display: block;
-      margin-bottom: 8px;
-    }
-    #edit-modal input[type="text"],
-    #edit-modal input[type="number"] {
       font-size: 1em;
-      padding: 2px 6px;
-      border-radius: 6px;
-      border: 1px solid #bbb;
-      margin-left: 6px;
+      transition: background 0.2s;
     }
-    #edit-modal button {
-      font-size: 1em;
-      padding: 4px 14px;
-      border-radius: 6px;
-      border: none;
-      background: #3498db;
+    .menu button:hover {
+      background: #1976d2;
       color: #fff;
-      margin-left: 4px;
-      cursor: pointer;
-      transition: background .15s;
     }
-    #edit-modal button:hover {
-      background: #217dbb;
-    }
-    #custom-menu {
-      display:none;
-      position:fixed;
-      z-index:2000;
-      background:#fff;
-      border-radius:10px;
-      box-shadow:0 2px 12px #0005;
-      min-width:120px;
-      font-size:1.1em;
-      user-select: none;
-      border: 1px solid #ccc;
-    }
-    #custom-menu div:hover {
-      background: #e2eafc;
-    }
-    @media (max-width: 900px) {
-      .main { flex-direction: column; height: auto; min-height: unset; }
-      .field-area, .bench-area { width: 100%; min-width: unset; }
-      .bench-area { border-left: none; border-top: 3px solid #b3c6e0; }
-      .field { max-width: 98vw; }
-    }
-    @media (max-width: 600px) {
-      .player { width: 48px; height: 56px; }
-      .player-circle { width: 36px; height: 36px; font-size: 1.2em; }
-      .player-name { font-size: 1.3em; }
-      .bench-player .player-circle, .suspension-player .player-circle { font-size: 1em; }
-      .bench-player, .suspension-player { padding: 3px 0 2px 0; }
-      .bench-area { min-width: unset; padding: 8px 2px; }
-      .reset-btn { font-size: 0.95em; padding: 7px 10px; }
+    @media (max-width: 700px) {
+      .field-svg {
+        height: 260px;
+      }
+      .field-area {
+        min-height: 260px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="main" id="main1">
-    <div class="field-area">
-      <div class="field" id="field1">
-        <div class="half-line"></div>
-        <div class="center-semicircle"></div>
-        <div class="goal-area"></div>
-        <div class="penalty-area"></div>
-        <div class="goal-line"></div>
-        <div class="goal"></div>
+  <div class="container">
+    <h1>戦術ボード - Tacticalista風</h1>
+    <div class="players-list" id="players-list"></div>
+    <div class="fields">
+      <div class="field-area" id="field1">
+        <span class="field-label">フィールドA</span>
+        <svg class="field-svg" viewBox="0 0 1000 600">
+          <rect x="0" y="0" width="1000" height="600" rx="30" fill="#388e3c"/>
+          <rect x="50" y="50" width="900" height="500" rx="20" fill="none" stroke="#fff" stroke-width="6"/>
+          <rect x="50" y="200" width="120" height="200" fill="none" stroke="#fff" stroke-width="4"/>
+          <rect x="830" y="200" width="120" height="200" fill="none" stroke="#fff" stroke-width="4"/>
+          <circle cx="500" cy="300" r="80" fill="none" stroke="#fff" stroke-width="4"/>
+          <line x1="500" y1="50" x2="500" y2="550" stroke="#fff" stroke-width="4"/>
+          <circle cx="500" cy="300" r="8" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="field-area" id="field2">
+        <span class="field-label">フィールドB</span>
+        <svg class="field-svg" viewBox="0 0 1000 600">
+          <rect x="0" y="0" width="1000" height="600" rx="30" fill="#388e3c"/>
+          <rect x="50" y="50" width="900" height="500" rx="20" fill="none" stroke="#fff" stroke-width="6"/>
+          <rect x="50" y="200" width="120" height="200" fill="none" stroke="#fff" stroke-width="4"/>
+          <rect x="830" y="200" width="120" height="200" fill="none" stroke="#fff" stroke-width="4"/>
+          <circle cx="500" cy="300" r="80" fill="none" stroke="#fff" stroke-width="4"/>
+          <line x1="500" y1="50" x2="500" y2="550" stroke="#fff" stroke-width="4"/>
+          <circle cx="500" cy="300" r="8" fill="#fff"/>
+        </svg>
       </div>
     </div>
-    <div class="bench-area">
-      <button class="reset-btn" onclick="movePlayersToFormation(1)">ピッチ内選手を初期配置に戻す</button>
-      <div class="bench-title">控え選手</div>
-      <div class="bench-list" id="bench1"></div>
-      <div class="suspension-title">出場停止</div>
-      <div class="suspension-list" id="suspension1"></div>
-    </div>
   </div>
-  <div class="main" id="main2">
-    <div class="field-area">
-      <div class="field" id="field2">
-        <div class="half-line"></div>
-        <div class="center-semicircle"></div>
-        <div class="goal-area"></div>
-        <div class="penalty-area"></div>
-        <div class="goal-line"></div>
-        <div class="goal"></div>
-      </div>
-    </div>
-    <div class="bench-area">
-      <button class="reset-btn" onclick="movePlayersToFormation(2)">ピッチ内選手を初期配置に戻す</button>
-      <button class="reset-btn" style="background:#2ecc71;margin-top:8px;" onclick="copyFromUpper()">↑上の状態をコピー</button>
-      <div class="bench-title">控え選手</div>
-      <div class="bench-list" id="bench2"></div>
-      <div class="suspension-title">出場停止</div>
-      <div class="suspension-list" id="suspension2"></div>
-    </div>
+  <div class="menu" id="context-menu">
+    <button data-action="bench">控えにする</button>
+    <button data-action="suspend">出場停止にする</button>
+    <button data-action="field">フィールドに戻す</button>
   </div>
-  <div id="edit-modal">
-    <div class="modal-inner">
-      <h3>選手情報の編集</h3>
-      <form id="edit-form">
-        <input type="hidden" id="edit-id">
-        <label>名前: <input type="text" id="edit-name" required></label>
-        <label>背番号: <input type="number" id="edit-number" required style="width:60px;"></label>
-        <label>ポジション: <input type="text" id="edit-positions" placeholder="カンマ区切り"></label>
-        <div style="text-align:right; margin-top:12px;">
-          <button type="button" onclick="closeEditModal()" style="margin-right:8px;">キャンセル</button>
-          <button type="submit">保存</button>
-        </div>
-      </form>
-    </div>
-  </div>
-<div id="custom-menu" style="display:none; position:fixed; z-index:2000; background:#fff; border-radius:10px; box-shadow:0 2px 12px #0005; min-width:120px; font-size:1.1em;">
-  <div id="menu-to-field" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;">フィールドへ</div>
-  <div id="menu-to-bench" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;">控えへ</div>
-  <div id="menu-to-suspension" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;">出場停止へ</div>
-  <div id="menu-edit-player" style="padding:12px; cursor:pointer; color:#217dbb; font-weight:bold;">選手情報変更</div>
-</div>
-<script>
-const PLAYERS = [
-  { id: 1, name: '坂本', number: 1, positions: ['GK'] },
-  { id: 6, name: '神門', number: 2, positions: ['RB','CM'] },
-  { id: 5, name: '伊藤', number: 3, positions: ['RB','LB'] },
-  { id: 19, name: '杉野', number: 4, positions: ['CAM'] },
-  { id: 7, name: '林', number: 5, positions: ['LB'] },
-  { id: 20, name: '西川', number: 6, positions: ['CDM'] },
-  { id: 2, name: '木下', number: 8, positions: ['RW'] },
-  { id: 9, name: '大原', number: 9, positions: ['CAM'] },
-  { id: 18, name: '中曽', number: 10, positions: ['LW'] },
-  { id: 10, name: '高芝 Ⓤ', number: 11, positions: ['ST'] },
-  { id: 8, name: '田中 Ⓤ', number: 16, positions: ['ST'] },
-  { id: 3, name: '荒井 Ⓤ', number: 17, positions: ['LB'] },
-  { id: 11, name: '飯田', number: 47, positions: ['ST'] },
-  { id: 4, name: '辻', number: 22, positions: ['CB'] },
-  { id: 16, name: '齊藤', number: 19, positions: ['ST'] },
-  { id: 12, name: '峯', number: 12, positions: ['GK'] },
-  { id: 13, name: '福島', number: 13, positions: ['CB'] },
-  { id: 14, name: '井原', number: 14, positions: ['CM'] },
-  { id: 17, name: '平田', number: 7, positions: ['CDM'] },
-  { id: 15, name: '有田 Ⓤ', number: 15, positions: ['CDM'] },
-  { id: 21, name: '芝本ｻｲﾄﾞ Ⓤ', number: 88, positions: ['CDM'] },
-  { id: 22, name: '田中ﾎﾞﾗﾝﾁ Ⓤ', number: 88, positions: ['CDM'] },
-  { id: 23, name: '助っ人', number: 88, positions: ['CDM'] }
-];
+  <script>
+    // 23人の選手データ（例: 実名・背番号・ポジション）
+    const players = [
+      { id: 1, name: "田中 太郎", number: 1, pos: "GK" },
+      { id: 2, name: "佐藤 次郎", number: 2, pos: "RB" },
+      { id: 3, name: "鈴木 三郎", number: 3, pos: "CB" },
+      { id: 4, name: "高橋 四郎", number: 4, pos: "CB" },
+      { id: 5, name: "伊藤 五郎", number: 5, pos: "LB" },
+      { id: 6, name: "渡辺 六郎", number: 6, pos: "DMF" },
+      { id: 7, name: "山本 七郎", number: 7, pos: "DMF" },
+      { id: 8, name: "中村 八郎", number: 8, pos: "RMF" },
+      { id: 9, name: "小林 九郎", number: 9, pos: "OMF" },
+      { id: 10, name: "加藤 十郎", number: 10, pos: "LMF" },
+      { id: 11, name: "吉田 十一", number: 11, pos: "CF" },
+      { id: 12, name: "松本 十二", number: 12, pos: "控え" },
+      { id: 13, name: "斎藤 十三", number: 13, pos: "控え" },
+      { id: 14, name: "清水 十四", number: 14, pos: "控え" },
+      { id: 15, name: "山田 十五", number: 15, pos: "控え" },
+      { id: 16, name: "森田 十六", number: 16, pos: "控え" },
+      { id: 17, name: "石井 十七", number: 17, pos: "控え" },
+      { id: 18, name: "池田 十八", number: 18, pos: "控え" },
+      { id: 19, name: "橋本 十九", number: 19, pos: "控え" },
+      { id: 20, name: "阿部 二十", number: 20, pos: "控え" },
+      { id: 21, name: "山口 二十一", number: 21, pos: "控え" },
+      { id: 22, name: "松田 二十二", number: 22, pos: "控え" },
+      { id: 23, name: "藤田 二十三", number: 23, pos: "控え" }
+    ];
 
-const DEFAULT_SUSPENSIONS = [23, 18,20,17];
+    // 4-2-3-1の初期配置（フィールド座標: 0-1000, 0-600）
+    const formation_4231 = [
+      // GK
+      { id: 1, x: 100, y: 300 },
+      // DF
+      { id: 2, x: 250, y: 120 },
+      { id: 3, x: 250, y: 240 },
+      { id: 4, x: 250, y: 360 },
+      { id: 5, x: 250, y: 480 },
+      // DMF
+      { id: 6, x: 400, y: 220 },
+      { id: 7, x: 400, y: 380 },
+      // MF
+      { id: 8, x: 600, y: 120 },
+      { id: 9, x: 600, y: 300 },
+      { id: 10, x: 600, y: 480 },
+      // FW
+      { id: 11, x: 800, y: 300 }
+    ];
 
-const FORMATION_4231 = [
-  { id: 1, x: 50, y: 90 },   // GK
-  { id: 2, x: 17, y: 75 },   // RB
-  { id: 3, x: 38, y: 75 },   // CB
-  { id: 4, x: 62, y: 75 },   // CB
-  { id: 5, x: 83, y: 75 },   // LB
-  { id: 6, x: 38, y: 52 },   // CDM
-  { id: 7, x: 62, y: 52 },   // CDM
-  { id: 8, x: 22, y: 35 },   // RW
-  { id: 9, x: 50, y: 35 },   // CAM
-  { id: 10, x: 78, y: 35 },  // LW
-  { id: 11, x: 50, y: 18 }   // ST
-];
-
-let states = [
-  {
-    playersOnField: [...FORMATION_4231.map(p=>p.id)],
-    playerPositions: (()=>{let o={};FORMATION_4231.forEach(p=>o[p.id]={x:p.x,y:p.y});return o;})(),
-    suspensionPlayers: [...DEFAULT_SUSPENSIONS]
-  },
-  {
-    playersOnField: [...FORMATION_4231.map(p=>p.id)],
-    playerPositions: (()=>{let o={};FORMATION_4231.forEach(p=>o[p.id]={x:p.x,y:p.y});return o;})(),
-    suspensionPlayers: [...DEFAULT_SUSPENSIONS]
-  }
-];
-
-// 編集モーダル関連
-function openEditModal(pid) {
-  const p = PLAYERS.find(x => x.id === pid);
-  document.getElementById('edit-id').value = p.id;
-  document.getElementById('edit-name').value = p.name;
-  document.getElementById('edit-number').value = p.number;
-  document.getElementById('edit-positions').value = p.positions.join(',');
-  document.getElementById('edit-modal').style.display = 'flex';
-}
-function closeEditModal() {
-  document.getElementById('edit-modal').style.display = 'none';
-}
-document.getElementById('edit-form').onsubmit = function(e) {
-  e.preventDefault();
-  const pid = +document.getElementById('edit-id').value;
-  const p = PLAYERS.find(x => x.id === pid);
-  p.name = document.getElementById('edit-name').value;
-  p.number = +document.getElementById('edit-number').value;
-  p.positions = document.getElementById('edit-positions').value.split(',').map(s => s.trim()).filter(Boolean);
-  closeEditModal();
-  renderAll();
-};
-
-function renderAll() {
-  render(1);
-  render(2);
-}
-function render(idx) {
-  const state = states[idx-1];
-  const field = document.getElementById('field'+idx);
-  field.querySelectorAll('.player').forEach(e=>e.remove());
-  const fw = field.clientWidth, fh = field.clientHeight;
-  state.playersOnField.forEach(pid=>{
-    const p = PLAYERS.find(x=>x.id===pid);
-    const pos = state.playerPositions[pid];
-    const div = document.createElement('div');
-    div.className = 'player';
-    div.setAttribute('draggable', true);
-    div.setAttribute('data-id', pid);
-    div.style.left = (pos.x/100*fw-35)+'px';
-    div.style.top = (pos.y/100*fh-40)+'px';
-    div.innerHTML = `<div class="player-circle">${p.number}</div><div class="player-name">${p.name}</div>`;
-    div.addEventListener('dragstart', e=>onDragStartPlayer(e, idx));
-    div.addEventListener('dragend', e=>onDragEndPlayer(e, idx));
-    // タッチイベントは親・子どちらでもOKに
-    div.addEventListener('touchstart', e=>onTouchStartPlayer(e, idx), {passive:false});
-    div.querySelector('.player-circle').addEventListener('touchstart', e=>onTouchStartPlayer(e, idx), {passive:false});
-    div.querySelector('.player-name').addEventListener('touchstart', e=>onTouchStartPlayer(e, idx), {passive:false});
-    if(idx===1) {
-      div.querySelector('.player-name').style.cursor = "pointer";
-      div.querySelector('.player-name').style.textDecoration = "underline dotted";
-      div.querySelector('.player-name').onclick = ()=>openEditModal(pid);
+    // 状態管理
+    let playerStates = {};
+    // 各フィールドごとに配置
+    function initPlayerStates() {
+      playerStates = {
+        field1: {},
+        field2: {},
+        bench: [],
+        suspended: []
+      };
+      // 4-2-3-1の11人をフィールド1, 残りを控え
+      for (let i = 0; i < players.length; i++) {
+        if (i < 11) {
+          playerStates.field1[players[i].id] = {
+            ...players[i],
+            x: formation_4231[i].x,
+            y: formation_4231[i].y,
+            status: "field"
+          };
+        } else {
+          playerStates.bench.push({ ...players[i], status: "bench" });
+        }
+      }
+      // フィールド2は空
+      playerStates.field2 = {};
+      playerStates.suspended = [];
     }
-    field.appendChild(div);
-  });
+    initPlayerStates();
 
-  // 控え側
-  const bench = document.getElementById('bench'+idx);
-  bench.innerHTML = '';
-  PLAYERS.filter(p=>!state.playersOnField.includes(p.id) && !state.suspensionPlayers.includes(p.id)).forEach(p=>{
-    const div = document.createElement('div');
-    div.className = 'bench-player';
-    div.setAttribute('draggable', true);
-    div.setAttribute('data-id', p.id);
-    div.innerHTML = `<div class="player-circle">${p.number}</div>
-      <div class="player-name"${idx===1?' style="cursor:pointer; text-decoration:underline dotted;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
-    div.addEventListener('dragstart', e=>onDragStartBench(e, idx));
-    div.addEventListener('dragend', e=>onDragEndBench(e, idx));
-    div.addEventListener('touchstart', e=>onTouchStartBench(e, idx), {passive:false});
-    div.addEventListener('contextmenu', e=>{
+    // 選手リスト描画
+    function renderPlayersList() {
+      const list = document.getElementById('players-list');
+      list.innerHTML = '';
+      // フィールド1
+      Object.values(playerStates.field1).forEach(p => {
+        list.appendChild(createPlayerChip(p, "field1"));
+      });
+      // フィールド2
+      Object.values(playerStates.field2).forEach(p => {
+        list.appendChild(createPlayerChip(p, "field2"));
+      });
+      // 控え
+      playerStates.bench.forEach(p => {
+        list.appendChild(createPlayerChip(p, "bench"));
+      });
+      // 出場停止
+      playerStates.suspended.forEach(p => {
+        list.appendChild(createPlayerChip(p, "suspended"));
+      });
+    }
+
+    function createPlayerChip(player, location) {
+      const chip = document.createElement('div');
+      chip.className = 'player-chip';
+      chip.draggable = true;
+      chip.dataset.id = player.id;
+      chip.dataset.status = player.status;
+      chip.innerHTML = `<b>#${player.number}</b> ${player.name} <span style="font-size:0.9em;color:#1976d2;">[${player.pos}]</span>`;
+      chip.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        showContextMenu(e, player, location);
+      });
+      chip.addEventListener('touchstart', e => {
+        chip._touchTimer = setTimeout(() => {
+          showContextMenu(e, player, location, true);
+        }, 600);
+      });
+      chip.addEventListener('touchend', e => {
+        clearTimeout(chip._touchTimer);
+      });
+      chip.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', JSON.stringify({ id: player.id, from: location }));
+      });
+      return chip;
+    }
+
+    // フィールド上の選手描画
+    function renderFieldPlayers(fieldId) {
+      const area = document.getElementById(fieldId);
+      // 既存のplayer-dotを削除
+      area.querySelectorAll('.player-dot').forEach(e => e.remove());
+      const fieldPlayers = playerStates[fieldId];
+      Object.values(fieldPlayers).forEach(player => {
+        const dot = document.createElement('div');
+        dot.className = 'player-dot';
+        dot.dataset.id = player.id;
+        dot.dataset.status = player.status;
+        dot.style.left = `calc(${player.x / 10}% - 0.8em)`;
+        dot.style.top = `calc(${player.y / 6}% - 0.8em)`;
+        dot.innerHTML = `<span style="font-size:1em;">${player.number}</span>`;
+        dot.title = `${player.name} [${player.pos}]`;
+        dot.draggable = true;
+        dot.addEventListener('contextmenu', e => {
+          e.preventDefault();
+          showContextMenu(e, player, fieldId);
+        });
+        dot.addEventListener('touchstart', e => {
+          dot._touchTimer = setTimeout(() => {
+            showContextMenu(e, player, fieldId, true);
+          }, 600);
+        });
+        dot.addEventListener('touchend', e => {
+          clearTimeout(dot._touchTimer);
+        });
+        dot.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('text/plain', JSON.stringify({ id: player.id, from: fieldId }));
+        });
+        // ドラッグ&ドロップ移動
+        dot.addEventListener('mousedown', startDrag);
+        dot.addEventListener('touchstart', startTouchDrag, { passive: false });
+        area.appendChild(dot);
+      });
+    }
+
+    // ドラッグ&ドロップ（PC）
+    document.querySelectorAll('.field-area').forEach(area => {
+      area.addEventListener('dragover', e => {
+        e.preventDefault();
+      });
+      area.addEventListener('drop', e => {
+        e.preventDefault();
+        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        const rect = area.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 1000;
+        const y = ((e.clientY - rect.top) / rect.height) * 600;
+        movePlayerToField(data.id, area.id, x, y, data.from);
+      });
+    });
+
+    // ドラッグ&ドロップ（控え・出場停止への移動）
+    document.getElementById('players-list').addEventListener('dragover', e => e.preventDefault());
+    document.getElementById('players-list').addEventListener('drop', e => {
       e.preventDefault();
-      moveToSuspension(p.id, idx);
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      movePlayerToBenchOrSuspended(data.id, data.from, "bench");
     });
-    bench.appendChild(div);
-  });
 
-  // 出場停止
-  const suspension = document.getElementById('suspension'+idx);
-  suspension.innerHTML = '';
-  PLAYERS.filter(p=>state.suspensionPlayers.includes(p.id)).forEach(p=>{
-    const div = document.createElement('div');
-    div.className = 'suspension-player';
-    div.setAttribute('draggable', true);
-    div.setAttribute('data-id', p.id);
-    div.innerHTML = `<div class="player-circle">${p.number}</div>
-      <div class="player-name"${idx===1?' style="cursor:pointer; text-decoration:underline dotted;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
-    // 移動系イベントリスナーを削除
-    // div.addEventListener('dragstart', e=>onDragStartSuspension(e, idx));
-    // div.addEventListener('dragend', e=>onDragEndSuspension(e, idx));
-    // div.addEventListener('touchstart', e=>onTouchStartSuspension(e, idx), {passive:false});
-    // カスタムメニュー用の長押しのみ残す
-    let timer = null;
-    div.ontouchstart = null;
-    div.ontouchend = null;
-    div.ontouchmove = null;
-    div.addEventListener('touchstart', function(e) {
-      timer = setTimeout(() => {
-        const touch = e.touches[0];
-        const pid = +div.getAttribute('data-id');
-        showCustomMenu(
-          touch.clientX,
-          touch.clientY,
-          pid,
-          idx,
-          'suspension'
-        );
-      }, 600);
-    }, {passive:false});
-    div.addEventListener('touchend', function() { clearTimeout(timer); });
-    div.addEventListener('touchmove', function() { clearTimeout(timer); });
-    suspension.appendChild(div);
-  });
-
-  // 長押しメニューを各選手に付与
-  // フィールド
-  field.querySelectorAll('.player').forEach(div => {
-    div.ontouchstart = null;
-    div.ontouchend = null;
-    div.ontouchmove = null;
-    div.addEventListener('touchstart', function(e) {
-      onTouchDragStart(e, idx, 'field');
-    }, {passive:false});
-  });
-  // 控え
-  bench.querySelectorAll('.bench-player').forEach(div => {
-    div.ontouchstart = null;
-    div.ontouchend = null;
-    div.ontouchmove = null;
-    div.addEventListener('touchstart', function(e) {
-      onTouchDragStart(e, idx, 'bench');
-    }, {passive:false});
-  });
-  // 出場停止
-  suspension.querySelectorAll('.suspension-player').forEach(div => {
-    div.ontouchstart = null;
-    div.ontouchend = null;
-    div.ontouchmove = null;
-    div.addEventListener('touchstart', function(e) {
-      onTouchDragStart(e, idx, 'suspension');
-    }, {passive:false});
-  });
-}
-
-// ドラッグデータ
-let dragPlayerId = null;
-let dragFrom = null;
-
-// フィールド上の選手ドラッグ
-function onDragStartPlayer(e, idx) {
-  dragPlayerId = +e.target.getAttribute('data-id');
-  dragFrom = 'field';
-  e.target.classList.add('dragging');
-  document.getElementById('field'+idx).addEventListener('dragover', ev=>onDragOverField(ev, idx));
-  document.getElementById('field'+idx).addEventListener('drop', ev=>onDropField(ev, idx));
-  document.getElementById('bench'+idx).addEventListener('dragover', ev=>onDragOverBench(ev, idx));
-  document.getElementById('bench'+idx).addEventListener('drop', ev=>onDropBench(ev, idx));
-  document.getElementById('suspension'+idx).addEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
-  document.getElementById('suspension'+idx).addEventListener('drop', ev=>onDropSuspension(ev, idx));
-}
-function onDragEndPlayer(e, idx) {
-  e.target.classList.remove('dragging');
-  document.getElementById('field'+idx).removeEventListener('dragover', ev=>onDragOverField(ev, idx));
-  document.getElementById('field'+idx).removeEventListener('drop', ev=>onDropField(ev, idx));
-  document.getElementById('bench'+idx).removeEventListener('dragover', ev=>onDragOverBench(ev, idx));
-  document.getElementById('bench'+idx).removeEventListener('drop', ev=>onDropBench(ev, idx));
-  document.getElementById('suspension'+idx).removeEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
-  document.getElementById('suspension'+idx).removeEventListener('drop', ev=>onDropSuspension(ev, idx));
-  dragPlayerId = null;
-  dragFrom = null;
-}
-
-// 控え選手ドラッグ
-function onDragStartBench(e, idx) {
-  dragPlayerId = +e.target.getAttribute('data-id');
-  dragFrom = 'bench';
-  e.target.classList.add('dragging');
-  document.getElementById('field'+idx).addEventListener('dragover', ev=>onDragOverField(ev, idx));
-  document.getElementById('field'+idx).addEventListener('drop', ev=>onDropField(ev, idx));
-  document.getElementById('bench'+idx).addEventListener('dragover', ev=>onDragOverBench(ev, idx));
-  document.getElementById('bench'+idx).addEventListener('drop', ev=>onDropBench(ev, idx));
-  document.getElementById('suspension'+idx).addEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
-  document.getElementById('suspension'+idx).addEventListener('drop', ev=>onDropSuspension(ev, idx));
-}
-function onDragEndBench(e, idx) {
-  e.target.classList.remove('dragging');
-  document.getElementById('field'+idx).removeEventListener('dragover', ev=>onDragOverField(ev, idx));
-  document.getElementById('field'+idx).removeEventListener('drop', ev=>onDropField(ev, idx));
-  document.getElementById('bench'+idx).removeEventListener('dragover', ev=>onDragOverBench(ev, idx));
-  document.getElementById('bench'+idx).removeEventListener('drop', ev=>onDropBench(ev, idx));
-  document.getElementById('suspension'+idx).removeEventListener('dragover', ev=>onDragOverSuspension(ev, idx));
-  document.getElementById('suspension'+idx).removeEventListener('drop', ev=>onDropSuspension(ev, idx));
-  dragPlayerId = null;
-  dragFrom = null;
-}
-
-// 出場停止選手ドラッグ
-function onDragStartSuspension(e, idx) {
-  dragPlayerId = +e.target.getAttribute('data-id');
-  dragFrom = 'suspension';
-  e.target.classList.add('dragging');
-  document.getElementById('bench'+idx).addEventListener('dragover', ev=>onDragOverBench(ev, idx));
-  document.getElementById('bench'+idx).addEventListener('drop', ev=>onDropBench(ev, idx));
-}
-function onDragEndSuspension(e, idx) {
-  e.target.classList.remove('dragging');
-  document.getElementById('bench'+idx).removeEventListener('dragover', ev=>onDragOverBench(ev, idx));
-  document.getElementById('bench'+idx).removeEventListener('drop', ev=>onDropBench(ev, idx));
-  dragPlayerId = null;
-  dragFrom = null;
-}
-
-// フィールドへのドロップ
-function onDragOverField(e, idx) { e.preventDefault(); }
-function onDropField(e, idx) {
-  e.preventDefault();
-  const field = document.getElementById('field'+idx);
-  const fw = field.clientWidth, fh = field.clientHeight;
-  const state = states[idx-1];
-  if (dragFrom === 'bench' && state.playersOnField.length < 11) {
-    state.playersOnField.push(dragPlayerId);
-    let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
-    const p = PLAYERS.find(x=>x.id===dragPlayerId);
-    if (p.positions.includes('GK')) y = 95;
-    state.playerPositions[dragPlayerId] = {x, y};
-  } else if (dragFrom === 'field') {
-    let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
-    state.playerPositions[dragPlayerId] = {x, y};
-  }
-  render(idx);
-}
-
-// 控えエリアへのドロップ
-function onDragOverBench(e, idx) { e.preventDefault(); }
-function onDropBench(e, idx) {
-  e.preventDefault();
-  const state = states[idx-1];
-  if (dragFrom === 'field') {
-    state.playersOnField = state.playersOnField.filter(id=>id!==dragPlayerId);
-    delete state.playerPositions[dragPlayerId];
-  } else if (dragFrom === 'suspension') {
-    state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==dragPlayerId);
-  }
-  render(idx);
-}
-
-// 出場停止エリアへのドロップ
-function onDragOverSuspension(e, idx) { e.preventDefault(); }
-function onDropSuspension(e, idx) {
-  e.preventDefault();
-  const state = states[idx-1];
-  if (dragFrom === 'bench') {
-    state.suspensionPlayers.push(dragPlayerId);
-  }
-  render(idx);
-}
-
-// タッチ操作
-function onTouchStartPlayer(e, idx) {
-  e.preventDefault();
-  // .player以外がターゲットなら親を取得
-  let playerDiv = e.target.closest('.player');
-  if (!playerDiv) return;
-  const pid = +playerDiv.getAttribute('data-id');
-  const field = document.getElementById('field'+idx);
-  let offsetX = e.touches[0].clientX - playerDiv.getBoundingClientRect().left;
-  let offsetY = e.touches[0].clientY - playerDiv.getBoundingClientRect().top;
-  const move = (ev) => {
-    let x = (ev.touches[0].clientX - field.getBoundingClientRect().left - offsetX);
-    let y = (ev.touches[0].clientY - field.getBoundingClientRect().top - offsetY);
-    playerDiv.style.left = Math.max(0, Math.min(x, field.clientWidth-playerDiv.offsetWidth))+'px';
-    playerDiv.style.top = Math.max(0, Math.min(y, field.clientHeight-playerDiv.offsetHeight))+'px';
-  };
-  const up = (ev) => {
-    let fw = field.clientWidth, fh = field.clientHeight;
-    let left = parseInt(playerDiv.style.left), top = parseInt(playerDiv.style.top);
-    states[idx-1].playerPositions[pid] = {
-      x: (left+playerDiv.offsetWidth/2)/fw*100,
-      y: (top+playerDiv.offsetHeight/2)/fh*100
-    };
-    document.removeEventListener('touchmove', move);
-    document.removeEventListener('touchend', up);
-    render(idx);
-  };
-  document.addEventListener('touchmove', move, {passive:false});
-  document.addEventListener('touchend', up, {passive:false});
-}
-function onTouchStartBench(e, idx) {
-  e.preventDefault();
-  const pid = +e.target.getAttribute('data-id');
-  const state = states[idx-1];
-  if (state.playersOnField.length >= 11) return;
-  state.playersOnField.push(pid);
-  state.playerPositions[pid] = {x: 50, y: 50};
-  render(idx);
-}
-function onTouchStartSuspension(e, idx) {
-  e.preventDefault();
-  const pid = +e.target.getAttribute('data-id');
-  const state = states[idx-1];
-  state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
-  render(idx);
-}
-
-// タッチ長押しで右クリック相当
-function addLongPressContextMenu(selector, callback) {
-  document.querySelectorAll(selector).forEach(el => {
-    let timer = null;
-    el.addEventListener('touchstart', function(e) {
-      timer = setTimeout(() => {
-        // 長押し位置取得
-        const rect = el.getBoundingClientRect();
-        const touch = e.touches[0];
-        const x = touch.clientX;
-        const y = touch.clientY;
-        const pid = +el.getAttribute('data-id');
-        // 親リストでfrom判定
-        let from = '';
-        if (el.classList.contains('player')) from = 'field';
-        else if (el.classList.contains('bench-player')) from = 'bench';
-        else if (el.classList.contains('suspension-player')) from = 'suspension';
-        showCustomMenu(x, y, pid, el.closest('.main').id === 'main2' ? 2 : 1, from);
-      }, 600);
-    }, {passive:false});
-    el.addEventListener('touchend', function() {
-      clearTimeout(timer);
-    });
-    el.addEventListener('touchmove', function() {
-      clearTimeout(timer);
-    });
-  });
-}
-
-let currentLongPress = { pid: null, idx: null, from: null };
-
-function showCustomMenu(x, y, pid, idx, from) {
-  currentLongPress = { pid, idx, from };
-  const menu = document.getElementById('custom-menu');
-  // メニュー項目の表示切替
-  document.getElementById('menu-to-field').style.display = (from === 'field') ? 'none' : '';
-  document.getElementById('menu-to-bench').style.display = (from === 'bench') ? 'none' : '';
-  document.getElementById('menu-to-suspension').style.display = (from === 'suspension') ? 'none' : '';
-  document.getElementById('menu-edit-player').style.display = '';
-  menu.style.display = 'block';
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-}
-
-// メニューを閉じる
-function hideCustomMenu() {
-  document.getElementById('custom-menu').style.display = 'none';
-  currentLongPress = { pid: null, idx: null, from: null };
-}
-
-// メニュークリック時の処理
-document.getElementById('menu-to-field').onclick = function() {
-  const { pid, idx, from } = currentLongPress;
-  const state = states[idx-1];
-  // すでにフィールドにいる場合は何もしない
-  if (state.playersOnField.includes(pid)) {
-    hideCustomMenu();
-    return;
-  }
-  // 11人未満なら追加
-  if (state.playersOnField.length < 11) {
-    // 出場停止から来た場合は出場停止リストから除外
-    if (from === 'suspension') {
-      state.suspensionPlayers = state.suspensionPlayers.filter(id => id !== pid);
+    // ドラッグ&ドロップ移動
+    function movePlayerToField(id, fieldId, x, y, from) {
+      id = Number(id);
+      // 既存の場所から削除
+      removePlayerFromState(id, from);
+      // 新しい場所に追加
+      const player = players.find(p => p.id === id);
+      playerStates[fieldId][id] = { ...player, x, y, status: "field" };
+      renderAll();
     }
-    // 控えから来た場合は何もしなくてOK（控えはplayersOnField, suspensionPlayers以外）
-// playersOnFieldに追加
-    state.playersOnField.push(pid);
-    // 位置を初期化（中央に配置）
-    state.playerPositions[pid] = { x: 50, y: 50 };
-    render(idx);
-  }
-  hideCustomMenu();
-};
-document.getElementById('menu-to-bench').onclick = function() {
-  const { pid, idx, from } = currentLongPress;
-  const state = states[idx-1];
-  if (from === 'field') {
-    state.playersOnField = state.playersOnField.filter(id=>id!==pid);
-    delete state.playerPositions[pid];
-  } else if (from === 'suspension') {
-    state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
-  }
-  render(idx);
-  hideCustomMenu();
-};
-document.getElementById('menu-to-suspension').onclick = function() {
-  const { pid, idx, from } = currentLongPress;
-  const state = states[idx-1];
-  if (!state.suspensionPlayers.includes(pid)) {
-    state.suspensionPlayers.push(pid);
-    if (from === 'field') {
-      state.playersOnField = state.playersOnField.filter(id=>id!==pid);
-      delete state.playerPositions[pid];
+    function movePlayerToBenchOrSuspended(id, from, to) {
+      id = Number(id);
+      removePlayerFromState(id, from);
+      const player = players.find(p => p.id === id);
+      playerStates[to].push({ ...player, status: to });
+      renderAll();
     }
-    render(idx);
-  }
-  hideCustomMenu();
-};
-document.getElementById('menu-edit-player').onclick = function() {
-  const { pid } = currentLongPress;
-  hideCustomMenu();
-  openEditModal(pid);
-};
-
-// タッチ以外の場所をタップしたらメニューを閉じる
-document.addEventListener('touchstart', function(e) {
-  if (!e.target.closest('#custom-menu')) hideCustomMenu();
-});
-
-// 長押しカスタムメニュー対応
-function addLongPressContextMenu(selector, callback) {
-  document.querySelectorAll(selector).forEach(el => {
-    let timer = null;
-    el.addEventListener('touchstart', function(e) {
-      timer = setTimeout(() => {
-        // 長押し位置取得
-        const rect = el.getBoundingClientRect();
-        const touch = e.touches[0];
-        const x = touch.clientX;
-        const y = touch.clientY;
-        const pid = +el.getAttribute('data-id');
-        // 親リストでfrom判定
-        let from = '';
-        if (el.classList.contains('player')) from = 'field';
-        else if (el.classList.contains('bench-player')) from = 'bench';
-        else if (el.classList.contains('suspension-player')) from = 'suspension';
-        showCustomMenu(x, y, pid, el.closest('.main').id === 'main2' ? 2 : 1, from);
-      }, 600);
-    }, {passive:false});
-    el.addEventListener('touchend', function() {
-      clearTimeout(timer);
-    });
-    el.addEventListener('touchmove', function() {
-      clearTimeout(timer);
-    });
-  });
-}
-
-function moveToSuspension(pid, idx) {
-  const state = states[idx-1];
-  if (!state.suspensionPlayers.includes(pid)) {
-    state.suspensionPlayers.push(pid);
-    render(idx);
-  }
-}
-function moveToBench(pid, idx) {
-  const state = states[idx-1];
-  state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
-  render(idx);
-}
-
-function movePlayersToFormation(idx) {
-  const state = states[idx-1];
-  let remainInit = FORMATION_4231.map(p=>({...p}));
-  state.playersOnField.forEach(pid=>{
-    let minIdx = 0, minDist = 1e9;
-    for(let i=0;i<remainInit.length;i++) {
-      let d = Math.abs(remainInit[i].x - (state.playerPositions[pid]?.x??50)) + Math.abs(remainInit[i].y - (state.playerPositions[pid]?.y??50));
-      if (d < minDist) { minDist = d; minIdx = i; }
+    function removePlayerFromState(id, from) {
+      id = Number(id);
+      if (from === "field1" || from === "field2") {
+        delete playerStates[from][id];
+      } else if (from === "bench" || from === "suspended") {
+        playerStates[from] = playerStates[from].filter(p => p.id !== id);
+      }
     }
-    state.playerPositions[pid] = {x: remainInit[minIdx].x, y: remainInit[minIdx].y};
-    remainInit.splice(minIdx,1);
-  });
-  render(idx);
-}
 
-function copyFromUpper() {
-  states[1].playersOnField = [...states[0].playersOnField];
-  states[1].playerPositions = JSON.parse(JSON.stringify(states[0].playerPositions));
-  states[1].suspensionPlayers = [...states[0].suspensionPlayers];
-  render(2);
-}
+    // ドットのドラッグ（PC: mousedown, mousemove, mouseup）
+    let dragTarget = null, dragField = null, dragOffset = {x:0, y:0};
+    function startDrag(e) {
+      if (e.button !== 0) return;
+      dragTarget = e.target;
+      dragField = dragTarget.closest('.field-area').id;
+      const id = Number(dragTarget.dataset.id);
+      dragOffset.x = e.offsetX;
+      dragOffset.y = e.offsetY;
+      document.addEventListener('mousemove', onDragMove);
+      document.addEventListener('mouseup', onDragEnd);
+    }
+    function onDragMove(e) {
+      if (!dragTarget) return;
+      const area = document.getElementById(dragField);
+      const rect = area.getBoundingClientRect();
+      let x = ((e.clientX - rect.left - dragOffset.x + 16) / rect.width) * 1000;
+      let y = ((e.clientY - rect.top - dragOffset.y + 16) / rect.height) * 600;
+      x = Math.max(0, Math.min(1000, x));
+      y = Math.max(0, Math.min(600, y));
+      const id = Number(dragTarget.dataset.id);
+      playerStates[dragField][id].x = x;
+      playerStates[dragField][id].y = y;
+      renderFieldPlayers(dragField);
+    }
+    function onDragEnd(e) {
+      dragTarget = null;
+      dragField = null;
+      document.removeEventListener('mousemove', onDragMove);
+      document.removeEventListener('mouseup', onDragEnd);
+      renderAll();
+    }
 
-window.addEventListener('resize', renderAll);
-renderAll();
-</script>
+    // タッチドラッグ（スマホ・タブレット）
+    let touchDragTarget = null, touchDragField = null, touchDragId = null;
+    function startTouchDrag(e) {
+      if (e.touches.length !== 1) return;
+      e.preventDefault();
+      touchDragTarget = e.target;
+      touchDragField = touchDragTarget.closest('.field-area').id;
+      touchDragId = Number(touchDragTarget.dataset.id);
+      document.addEventListener('touchmove', onTouchDragMove, { passive: false });
+      document.addEventListener('touchend', onTouchDragEnd);
+    }
+    function onTouchDragMove(e) {
+      if (!touchDragTarget) return;
+      const area = document.getElementById(touchDragField);
+      const rect = area.getBoundingClientRect();
+      let x = ((e.touches[0].clientX - rect.left) / rect.width) * 1000;
+      let y = ((e.touches[0].clientY - rect.top) / rect.height) * 600;
+      x = Math.max(0, Math.min(1000, x));
+      y = Math.max(0, Math.min(600, y));
+      playerStates[touchDragField][touchDragId].x = x;
+      playerStates[touchDragField][touchDragId].y = y;
+      renderFieldPlayers(touchDragField);
+    }
+    function onTouchDragEnd(e) {
+      touchDragTarget = null;
+      touchDragField = null;
+      touchDragId = null;
+      document.removeEventListener('touchmove', onTouchDragMove);
+      document.removeEventListener('touchend', onTouchDragEnd);
+      renderAll();
+    }
+
+    // コンテキストメニュー
+    const menu = document.getElementById('context-menu');
+    function showContextMenu(e, player, location, isTouch = false) {
+      menu.style.display = 'flex';
+      menu.classList.add('active');
+      const x = isTouch ? (e.touches ? e.touches[0].clientX : e.clientX) : e.clientX;
+      const y = isTouch ? (e.touches ? e.touches[0].clientY : e.clientY) : e.clientY;
+      menu.style.left = x + 'px';
+      menu.style.top = y + 'px';
+      menu.dataset.id = player.id;
+      menu.dataset.location = location;
+      // メニューの有効/無効
+      menu.querySelector('[data-action="bench"]').disabled = (location === "bench");
+      menu.querySelector('[data-action="suspend"]').disabled = (location === "suspended");
+      menu.querySelector('[data-action="field"]').disabled = (location === "field1" || location === "field2");
+    }
+    document.body.addEventListener('click', () => {
+      menu.classList.remove('active');
+      menu.style.display = 'none';
+    });
+    menu.addEventListener('click', e => {
+      if (e.target.tagName !== 'BUTTON') return;
+      const id = Number(menu.dataset.id);
+      const location = menu.dataset.location;
+      if (e.target.dataset.action === "bench") {
+        movePlayerToBenchOrSuspended(id, location, "bench");
+      } else if (e.target.dataset.action === "suspend") {
+        movePlayerToBenchOrSuspended(id, location, "suspended");
+      } else if (e.target.dataset.action === "field") {
+        // フィールド1に戻す（初期位置）
+        const idx = players.findIndex(p => p.id === id);
+        if (idx < 11) {
+          const pos = formation_4231[idx];
+          movePlayerToField(id, "field1", pos.x, pos.y, location);
+        } else {
+          // 控え選手は控えに戻す
+          movePlayerToBenchOrSuspended(id, location, "bench");
+        }
+      }
+      menu.classList.remove('active');
+      menu.style.display = 'none';
+    });
+
+    // 全体再描画
+    function renderAll() {
+      renderPlayersList();
+      renderFieldPlayers('field1');
+      renderFieldPlayers('field2');
+    }
+    renderAll();
+  </script>
 </body>
 </html>
