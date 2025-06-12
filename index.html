@@ -132,7 +132,7 @@
     }
     .player-name {
       text-align: center;
-      font-size: 1.8em;
+      font-size: 2.0em;
       font-weight: bold;
       color: #fff;
       text-shadow: 1px 1px 3px #000b;
@@ -374,11 +374,11 @@ const PLAYERS = [
   { id: 17, name: '平田', number: 7, positions: ['CDM'] },
   { id: 15, name: '有田 Ⓤ', number: 15, positions: ['CDM'] },
   { id: 21, name: '芝本ｻｲﾄﾞ Ⓤ', number: 88, positions: ['CDM'] },
-  { id: 22, name: '田中ﾎﾞﾗﾝﾁ Ⓤ', number: 88, positions: ['CDM'] },
+  { id: 22, name: '田中ﾎﾞﾗﾝﾁ Ⓤ', number: 87, positions: ['CDM'] },
   { id: 23, name: '助っ人', number: 88, positions: ['CDM'] }
 ];
 
-const DEFAULT_SUSPENSIONS = [23, 18,20,17];
+const DEFAULT_SUSPENSIONS = [23, 18,20,17,21];
 
 const FORMATION_4231 = [
   { id: 1, x: 50, y: 90 },   // GK
@@ -408,6 +408,8 @@ let states = [
   }
 ];
 
+let customMenuTarget = null; // 選手IDとエリア情報を保持
+
 // 編集モーダル関連
 function openEditModal(pid) {
   const p = PLAYERS.find(x => x.id === pid);
@@ -432,10 +434,6 @@ document.getElementById('edit-form').onsubmit = function(e) {
 };
 
 // 描画
-function renderAll() {
-  render(1);
-  render(2);
-}
 function render(idx) {
   const state = states[idx-1];
   const field = document.getElementById('field'+idx);
@@ -453,9 +451,15 @@ function render(idx) {
     div.innerHTML = `<div class="player-circle">${p.number}</div><div class="player-name">${p.name}</div>`;
     if(idx===1) {
       div.querySelector('.player-name').style.cursor = "pointer";
-      div.querySelector('.player-name').style.textDecoration = "underline dotted";
       div.querySelector('.player-name').onclick = ()=>openEditModal(pid);
     }
+    div.oncontextmenu = (e) => showCustomMenu(e, pid, 'field', idx);
+    // 長押し対応
+    let pressTimer;
+    div.ontouchstart = (e) => {
+      pressTimer = setTimeout(() => showCustomMenu(e.touches[0], pid, 'field', idx), 600);
+    };
+    div.ontouchend = () => clearTimeout(pressTimer);
     field.appendChild(div);
   });
 
@@ -468,7 +472,14 @@ function render(idx) {
     div.setAttribute('draggable', true);
     div.setAttribute('data-id', p.id);
     div.innerHTML = `<div class="player-circle">${p.number}</div>
-      <div class="player-name"${idx===1?' style="cursor:pointer; text-decoration:underline dotted;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
+      <div class="player-name"${idx===1?' style="cursor:pointer;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
+    div.oncontextmenu = (e) => showCustomMenu(e, p.id, 'bench', idx);
+    // 長押し対応
+    let pressTimer;
+    div.ontouchstart = (e) => {
+      pressTimer = setTimeout(() => showCustomMenu(e.touches[0], p.id, 'bench', idx), 600);
+    };
+    div.ontouchend = () => clearTimeout(pressTimer);
     bench.appendChild(div);
   });
 
@@ -481,13 +492,177 @@ function render(idx) {
     div.setAttribute('draggable', true);
     div.setAttribute('data-id', p.id);
     div.innerHTML = `<div class="player-circle">${p.number}</div>
-      <div class="player-name"${idx===1?' style="cursor:pointer; text-decoration:underline dotted;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
+      <div class="player-name"${idx===1?' style="cursor:pointer;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
+    div.oncontextmenu = (e) => showCustomMenu(e, p.id, 'suspension', idx);
+    // 長押し対応
+    let pressTimer;
+    div.ontouchstart = (e) => {
+      pressTimer = setTimeout(() => showCustomMenu(e.touches[0], p.id, 'suspension', idx), 600);
+    };
+    div.ontouchend = () => clearTimeout(pressTimer);
     suspension.appendChild(div);
   });
+
+  // ここを追加
+  enableFieldDrag(idx);
 }
+
+// フィールド内ドラッグ移動対応
+function enableFieldDrag(idx) {
+  const field = document.getElementById('field'+idx);
+  let draggingId = null;
+
+  field.querySelectorAll('.player').forEach(div => {
+    div.ondragstart = function(e) {
+      draggingId = +div.getAttribute('data-id');
+      div.classList.add('dragging');
+      // ドラッグ画像を透明に
+      const img = new Image();
+      img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/%3E";
+      e.dataTransfer.setDragImage(img, 0, 0);
+    };
+    div.ondragend = function() {
+      draggingId = null;
+      div.classList.remove('dragging');
+    };
+  });
+
+  field.ondragover = function(e) {
+    e.preventDefault();
+  };
+  field.ondrop = function(e) {
+    e.preventDefault();
+    if (draggingId == null) return;
+    const rect = field.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / field.clientWidth) * 100;
+    const y = ((e.clientY - rect.top) / field.clientHeight) * 100;
+    const state = states[idx-1];
+    state.playerPositions[draggingId] = { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+    render(idx);
+  };
+}
+
+// 描画時にドラッグ有効化
+function renderAll() {
+  render(1);
+  render(2);
+  enableFieldDrag(1);
+  enableFieldDrag(2);
+}
+
+function showCustomMenu(e, pid, area, idx) {
+  e.preventDefault();
+  customMenuTarget = { pid, area, idx };
+  const menu = document.getElementById('custom-menu');
+  menu.style.display = 'block';
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+}
+function hideCustomMenu() {
+  document.getElementById('custom-menu').style.display = 'none';
+  customMenuTarget = null;
+}
+window.addEventListener('click', hideCustomMenu);
+window.addEventListener('scroll', hideCustomMenu);
 
 window.addEventListener('resize', renderAll);
 renderAll();
-</script>
+
+document.getElementById('menu-to-field').onclick = function() {
+  if (!customMenuTarget) return;
+  const { pid, area, idx } = customMenuTarget;
+  const state = states[idx-1];
+  // 既にフィールドにいる場合は何もしない
+  if (!state.playersOnField.includes(pid)) {
+    // 控え・出場停止から除外
+    state.suspensionPlayers = state.suspensionPlayers.filter(x=>x!==pid);
+    // 11人未満なら追加
+    if (state.playersOnField.length < 11) {
+      state.playersOnField.push(pid);
+      // 適当な位置に配置（中央）
+      state.playerPositions[pid] = {x:50, y:50};
+    }
+  }
+  hideCustomMenu();
+  render(idx);
+};
+document.getElementById('menu-to-bench').onclick = function() {
+  if (!customMenuTarget) return;
+  const { pid, area, idx } = customMenuTarget;
+  const state = states[idx-1];
+  state.playersOnField = state.playersOnField.filter(x=>x!==pid);
+  state.suspensionPlayers = state.suspensionPlayers.filter(x=>x!==pid);
+  hideCustomMenu();
+  render(idx);
+};
+document.getElementById('menu-to-suspension').onclick = function() {
+  if (!customMenuTarget) return;
+  const { pid, area, idx } = customMenuTarget;
+  const state = states[idx-1];
+  state.playersOnField = state.playersOnField.filter(x=>x!==pid);
+  if (!state.suspensionPlayers.includes(pid)) state.suspensionPlayers.push(pid);
+  hideCustomMenu();
+  render(idx);
+};
+document.getElementById('menu-edit-player').onclick = function() {
+  if (!customMenuTarget) return;
+  openEditModal(customMenuTarget.pid);
+  hideCustomMenu();
+};
+
+/**
+ * ピッチ内選手を初期配置に一番近い位置へ移動
+ * @param {number} idx 1 or 2
+ */
+function movePlayersToFormation(idx) {
+  const state = states[idx-1];
+  // 初期配置の座標リスト
+  const formation = [...FORMATION_4231];
+  // 現在フィールド上の選手IDリスト
+  const fieldPlayers = [...state.playersOnField];
+
+  // 初期配置と現在の選手をマッチング（最も近い位置に割り当て）
+  // 1. 距離行列を作る
+  const dist = [];
+  for (let i = 0; i < fieldPlayers.length; i++) {
+    dist[i] = [];
+    for (let j = 0; j < formation.length; j++) {
+      const pid = fieldPlayers[i];
+      const pos = state.playerPositions[pid];
+      const fpos = formation[j];
+      dist[i][j] = Math.hypot((pos?.x ?? 50) - fpos.x, (pos?.y ?? 50) - fpos.y);
+    }
+  }
+  // 2. 貪欲法で割り当て
+  const usedFormation = new Set();
+  const assign = {};
+  for (let k = 0; k < Math.min(fieldPlayers.length, formation.length); k++) {
+    let minI = -1, minJ = -1, minD = 1e9;
+    for (let i = 0; i < fieldPlayers.length; i++) {
+      if (assign[fieldPlayers[i]] !== undefined) continue;
+      for (let j = 0; j < formation.length; j++) {
+        if (usedFormation.has(j)) continue;
+        if (dist[i][j] < minD) {
+          minD = dist[i][j];
+          minI = i;
+          minJ = j;
+        }
+      }
+    }
+    if (minI !== -1 && minJ !== -1) {
+      assign[fieldPlayers[minI]] = minJ;
+      usedFormation.add(minJ);
+    }
+  }
+  // 3. 割り当てた初期配置座標に移動
+  for (const pid of fieldPlayers) {
+    const j = assign[pid];
+    if (j !== undefined) {
+      state.playerPositions[pid] = { x: formation[j].x, y: formation[j].y };
+    }
+  }
+  render(idx);
+}
+  </script>
 </body>
 </html>
