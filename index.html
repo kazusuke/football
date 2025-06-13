@@ -455,11 +455,26 @@ function render(idx) {
     }
     div.oncontextmenu = (e) => showCustomMenu(e, pid, 'field', idx);
     // タップ対応（長押しはやめてタップのみ）
-    div.ontouchstart = (e) => {
-      if (e.touches.length !== 1) return;
-      e.preventDefault(); // ← 追加：テキスト選択やスクロールを防止
-      showCustomMenu(e.touches[0], pid, 'field', idx);
-    };
+// タッチイベントの例
+div.ontouchstart = (e) => {
+  if (e.touches.length !== 1) return;
+  e.preventDefault();
+  showCustomMenu(e.touches[0], pid, 'field', idx);
+};
+
+// showCustomMenu関数の修正例
+function showCustomMenu(e, pid, area, idx) {
+  e.preventDefault();
+  customMenuTarget = { pid, area, idx };
+  const menu = document.getElementById('custom-menu');
+  menu.style.display = 'block';
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  menu.style.left = clientX + 'px';
+  menu.style.top = clientY + 'px';
+}
+
+
     div.ontouchend = null;
     field.appendChild(div);
   });
@@ -478,7 +493,6 @@ function render(idx) {
     // タップ対応（長押しはやめてタップのみ）
     div.ontouchstart = (e) => {
       if (e.touches.length !== 1) return;
-      e.preventDefault(); // ← 追加
       showCustomMenu(e.touches[0], p.id, 'bench', idx);
     };
     div.ontouchend = null;
@@ -499,7 +513,6 @@ function render(idx) {
     // タップ対応（長押しはやめてタップのみ）
     div.ontouchstart = (e) => {
       if (e.touches.length !== 1) return;
-      e.preventDefault(); // ← 追加
       showCustomMenu(e.touches[0], p.id, 'suspension', idx);
     };
     div.ontouchend = null;
