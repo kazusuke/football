@@ -456,10 +456,27 @@ function render(idx) {
     div.oncontextmenu = (e) => showCustomMenu(e, pid, 'field', idx);
     // 長押し対応
     let pressTimer;
+    let moved = false;
     div.ontouchstart = (e) => {
-      pressTimer = setTimeout(() => showCustomMenu(e.touches[0], pid, 'field', idx), 600);
+      moved = false;
+      pressTimer = setTimeout(() => {
+        showCustomMenu(e.touches[0], pid, 'field', idx);
+        pressTimer = null;
+      }, 600);
     };
-    div.ontouchend = () => clearTimeout(pressTimer);
+    div.ontouchmove = () => {
+      moved = true;
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+    div.ontouchend = () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
     field.appendChild(div);
   });
 
