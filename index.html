@@ -286,6 +286,14 @@
       .bench-area { min-width: unset; padding: 8px 2px; }
       .reset-btn { font-size: 0.95em; padding: 7px 10px; }
     }
+    .player,
+.bench-player,
+.suspension-player {
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
   </style>
 </head>
 <body>
@@ -720,6 +728,12 @@ function movePlayersToFormation(idx) {
   }
   render(idx);
 }
+    div.ontouchstart = (e) => {
+  if (e.touches.length !== 1) return;
+  e.preventDefault(); // ← これを追加
+  showCustomMenu(e.touches[0], pid, 'field', idx);
+};
+
   </script>
 </body>
 </html>
