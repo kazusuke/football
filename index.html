@@ -466,23 +466,35 @@ function render(idx) {
 // タッチイベントの例
 div.ontouchstart = (e) => {
   if (e.touches.length !== 1) return;
-  e.preventDefault();
-  showCustomMenu(e.touches[0], pid, 'field', idx);
+  let touch = e.touches[0];
+  let startX = touch.clientX, startY = touch.clientY;
+  let moved = false;
+  let timer = setTimeout(() => {
+    // 長押しでドラッグ開始
+    moved = true;
+    // ここでドラッグ開始処理（既存のドラッグ処理を呼ぶ）
+    // 例: enableFieldDragの内容を関数化して呼び出す
+  }, 220); // 200ms以上でドラッグ
+
+  div.ontouchmove = function(ev) {
+    let dx = ev.touches[0].clientX - startX;
+    let dy = ev.touches[0].clientY - startY;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+      moved = true;
+      clearTimeout(timer);
+      // ここでドラッグ開始処理
+    }
+  };
+  div.ontouchend = function(ev) {
+    clearTimeout(timer);
+    div.ontouchmove = null;
+    div.ontouchend = null;
+    if (!moved) {
+      // タップ扱いでメニュー表示
+      showCustomMenu(e.changedTouches[0], pid, 'field', idx);
+    }
+  };
 };
-
-// showCustomMenu関数の修正例
-function showCustomMenu(e, pid, area, idx) {
-  e.preventDefault();
-  customMenuTarget = { pid, area, idx };
-  const menu = document.getElementById('custom-menu');
-  menu.style.display = 'block';
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  menu.style.left = clientX + 'px';
-  menu.style.top = clientY + 'px';
-}
-
-
     div.ontouchend = null;
     field.appendChild(div);
   });
