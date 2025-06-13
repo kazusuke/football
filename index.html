@@ -531,14 +531,6 @@ function enableFieldDrag(idx) {
     // モバイル用タッチドラッグ
     div.ontouchstart = function(e) {
       if (e.touches.length !== 1) return;
-      let isLongPress = false;
-      let longPressTimer = setTimeout(() => {
-        isLongPress = true;
-        div.classList.remove('dragging');
-        draggingId = null;
-        showCustomMenu(e.touches[0], +div.getAttribute('data-id'), 'field', idx);
-      }, 600);
-
       draggingId = +div.getAttribute('data-id');
       div.classList.add('dragging');
       const rect = field.getBoundingClientRect();
@@ -548,56 +540,47 @@ function enableFieldDrag(idx) {
       const origY = parseFloat(div.style.top);
 
       touchMoveHandler = function(ev) {
-        if (draggingId == null || isLongPress) return;
-        ev.preventDefault();
-        clearTimeout(longPressTimer);
+        if (draggingId == null) return;
+        ev.preventDefault(); // ← これを追加
         const moveX = ev.touches[0].clientX - startX;
         const moveY = ev.touches[0].clientY - startY;
         div.style.left = (origX + moveX) + "px";
         div.style.top = (origY + moveY) + "px";
       };
       document.addEventListener('touchmove', touchMoveHandler, {passive:false});
-
-      div.ontouchend = function(e) {
-        clearTimeout(longPressTimer);
-        if (isLongPress) {
-          isLongPress = false;
-          document.removeEventListener('touchmove', touchMoveHandler, {passive:false});
-          div.classList.remove('dragging');
-          draggingId = null;
-          return;
-        }
-        if (draggingId == null) return;
-        div.classList.remove('dragging');
-        document.removeEventListener('touchmove', touchMoveHandler, {passive:false});
-        // 最終位置を保存
-        const left = parseFloat(div.style.left);
-        const top = parseFloat(div.style.top);
-        const fw = field.clientWidth, fh = field.clientHeight;
-        // 逆算してx,y(%)を求める
-        const x = ((left + 35) / fw) * 100;
-        const y = ((top + 40) / fh) * 100;
-        const state = states[idx-1];
-        state.playerPositions[draggingId] = { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
-        draggingId = null;
-        render(idx);
-      };
     };
-
-    field.ondragover = function(e) {
-      e.preventDefault();
-    };
-    field.ondrop = function(e) {
-      e.preventDefault();
+    div.ontouchend = function(e) {
       if (draggingId == null) return;
+      div.classList.remove('dragging');
+      document.removeEventListener('touchmove', touchMoveHandler, {passive:false});
+      // 最終位置を保存
       const rect = field.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / field.clientWidth) * 100;
-      const y = ((e.clientY - rect.top) / field.clientHeight) * 100;
+      const left = parseFloat(div.style.left);
+      const top = parseFloat(div.style.top);
+      const fw = field.clientWidth, fh = field.clientHeight;
+      // 逆算してx,y(%)を求める
+      const x = ((left + 35) / fw) * 100;
+      const y = ((top + 40) / fh) * 100;
       const state = states[idx-1];
       state.playerPositions[draggingId] = { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+      draggingId = null;
       render(idx);
     };
   });
+
+  field.ondragover = function(e) {
+    e.preventDefault();
+  };
+  field.ondrop = function(e) {
+    e.preventDefault();
+    if (draggingId == null) return;
+    const rect = field.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / field.clientWidth) * 100;
+    const y = ((e.clientY - rect.top) / field.clientHeight) * 100;
+    const state = states[idx-1];
+    state.playerPositions[draggingId] = { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+    render(idx);
+  };
 }
 
 // 描画時にドラッグ有効化
@@ -720,19 +703,6 @@ function movePlayersToFormation(idx) {
     }
   }
   render(idx);
-}
-
-/**
- * 上の状態を下にコピーする
- */
-function copyFromUpper() {
-  // states[0] → states[1] へディープコピー
-  states[1] = {
-    playersOnField: [...states[0].playersOnField],
-    playerPositions: JSON.parse(JSON.stringify(states[0].playerPositions)),
-    suspensionPlayers: [...states[0].suspensionPlayers]
-  };
-  renderAll();
 }
   </script>
 </body>
