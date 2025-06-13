@@ -457,6 +457,7 @@ function render(idx) {
     // タップ対応（長押しはやめてタップのみ）
     div.ontouchstart = (e) => {
       if (e.touches.length !== 1) return;
+      e.preventDefault(); // ← 追加：テキスト選択やスクロールを防止
       showCustomMenu(e.touches[0], pid, 'field', idx);
     };
     div.ontouchend = null;
@@ -477,6 +478,7 @@ function render(idx) {
     // タップ対応（長押しはやめてタップのみ）
     div.ontouchstart = (e) => {
       if (e.touches.length !== 1) return;
+      e.preventDefault(); // ← 追加
       showCustomMenu(e.touches[0], p.id, 'bench', idx);
     };
     div.ontouchend = null;
@@ -497,6 +499,7 @@ function render(idx) {
     // タップ対応（長押しはやめてタップのみ）
     div.ontouchstart = (e) => {
       if (e.touches.length !== 1) return;
+      e.preventDefault(); // ← 追加
       showCustomMenu(e.touches[0], p.id, 'suspension', idx);
     };
     div.ontouchend = null;
