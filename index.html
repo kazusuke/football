@@ -286,16 +286,6 @@
       .bench-area { min-width: unset; padding: 8px 2px; }
       .reset-btn { font-size: 0.95em; padding: 7px 10px; }
     }
-    .player,
-    .player-circle,
-    .player-name,
-    .bench-player,
-    .suspension-player {
-      user-select: none;
-      -webkit-user-select: none;
-      -ms-user-select: none;
-      -webkit-touch-callout: none; /* ← これを追加 */
-    }
   </style>
 </head>
 <body>
@@ -464,29 +454,12 @@ function render(idx) {
       div.querySelector('.player-name').onclick = ()=>openEditModal(pid);
     }
     div.oncontextmenu = (e) => showCustomMenu(e, pid, 'field', idx);
-    // 長押し対応
-    let pressTimer;
-    let moved = false;
+    // タップ対応（長押しはやめてタップのみ）
     div.ontouchstart = (e) => {
-      moved = false;
-      pressTimer = setTimeout(() => {
-        showCustomMenu(e.touches[0], pid, 'field', idx);
-        pressTimer = null;
-      }, 600);
+      if (e.touches.length !== 1) return;
+      showCustomMenu(e.touches[0], pid, 'field', idx);
     };
-    div.ontouchmove = () => {
-      moved = true;
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-      }
-    };
-    div.ontouchend = () => {
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-      }
-    };
+    div.ontouchend = null;
     field.appendChild(div);
   });
 
@@ -501,12 +474,12 @@ function render(idx) {
     div.innerHTML = `<div class="player-circle">${p.number}</div>
       <div class="player-name"${idx===1?' style="cursor:pointer;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
     div.oncontextmenu = (e) => showCustomMenu(e, p.id, 'bench', idx);
-    // 長押し対応
-    let pressTimer;
+    // タップ対応（長押しはやめてタップのみ）
     div.ontouchstart = (e) => {
-      pressTimer = setTimeout(() => showCustomMenu(e.touches[0], p.id, 'bench', idx), 600);
+      if (e.touches.length !== 1) return;
+      showCustomMenu(e.touches[0], p.id, 'bench', idx);
     };
-    div.ontouchend = () => clearTimeout(pressTimer);
+    div.ontouchend = null;
     bench.appendChild(div);
   });
 
@@ -521,12 +494,12 @@ function render(idx) {
     div.innerHTML = `<div class="player-circle">${p.number}</div>
       <div class="player-name"${idx===1?' style="cursor:pointer;"':''}${idx===1?` onclick="openEditModal(${p.id})"`:""}>${p.name}</div>`;
     div.oncontextmenu = (e) => showCustomMenu(e, p.id, 'suspension', idx);
-    // 長押し対応
-    let pressTimer;
+    // タップ対応（長押しはやめてタップのみ）
     div.ontouchstart = (e) => {
-      pressTimer = setTimeout(() => showCustomMenu(e.touches[0], p.id, 'suspension', idx), 600);
+      if (e.touches.length !== 1) return;
+      showCustomMenu(e.touches[0], p.id, 'suspension', idx);
     };
-    div.ontouchend = () => clearTimeout(pressTimer);
+    div.ontouchend = null;
     suspension.appendChild(div);
   });
 
@@ -623,17 +596,8 @@ function showCustomMenu(e, pid, area, idx) {
   customMenuTarget = { pid, area, idx };
   const menu = document.getElementById('custom-menu');
   menu.style.display = 'block';
-  // タッチイベントかどうかで座標取得方法を分岐
-  let x, y;
-  if (e.touches && e.touches.length > 0) {
-    x = e.touches[0].clientX;
-    y = e.touches[0].clientY;
-  } else {
-    x = e.clientX;
-    y = e.clientY;
-  }
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
 }
 function hideCustomMenu() {
   document.getElementById('custom-menu').style.display = 'none';
