@@ -452,7 +452,16 @@ function render(idx) {
     div.addEventListener('dragend', e=>onDragEndPlayer(e, idx));
     // 長押しでメニュー表示
     let timer = null;
+    let moved = false;
+    let startX = 0, startY = 0;
+    let origLeft = 0, origTop = 0;
     div.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) return;
+      moved = false;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      origLeft = parseFloat(div.style.left);
+      origTop = parseFloat(div.style.top);
       timer = setTimeout(() => {
         const touch = e.touches[0];
         const pid = +div.getAttribute('data-id');
@@ -464,9 +473,47 @@ function render(idx) {
           'field'
         );
       }, 600);
+      // 移動用
+      document.addEventListener('touchmove', move, {passive:false});
+      document.addEventListener('touchend', up, {passive:false});
     }, {passive:false});
+    function move(ev) {
+      if ev.touches.length > 1) return;
+      const dx = ev.touches[0].clientX - startX;
+      const dy = ev.touches[0].clientY - startY;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        clearTimeout(timer);
+        moved = true;
+        let x = origLeft + dx;
+        let y = origTop + dy;
+        x = Math.max(0, Math.min(x, field.clientWidth-div.offsetWidth));
+        y = Math.max(0, Math.min(y, field.clientHeight-div.offsetHeight));
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+      }
+    }
+    function up(ev) {
+      clearTimeout(timer);
+      document.removeEventListener('touchmove', move);
+      document.removeEventListener('touchend', up);
+      if (moved) {
+        let fw = field.clientWidth, fh = field.clientHeight;
+        let left = parseFloat(div.style.left), top = parseFloat(div.style.top);
+        states[idx-1].playerPositions[pid] = {
+          x: (left+div.offsetWidth/2)/fw*100,
+          y: (top+div.offsetHeight/2)/fh*100
+        };
+        render(idx);
+      }
+    }
     div.addEventListener('touchend', function() { clearTimeout(timer); });
-    div.addEventListener('touchmove', function() { clearTimeout(timer); });
+    div.addEventListener('touchmove', function(e) {
+      // ここではtimerだけ止める
+      if (e.touches.length > 1) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) clearTimeout(timer);
+    }, {passive:false});
     if(idx===1) {
       div.querySelector('.player-name').style.cursor = "pointer";
       div.querySelector('.player-name').style.textDecoration = "underline dotted";
