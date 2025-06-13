@@ -623,8 +623,17 @@ function showCustomMenu(e, pid, area, idx) {
   customMenuTarget = { pid, area, idx };
   const menu = document.getElementById('custom-menu');
   menu.style.display = 'block';
-  menu.style.left = e.clientX + 'px';
-  menu.style.top = e.clientY + 'px';
+  // タッチイベントかどうかで座標取得方法を分岐
+  let x, y;
+  if (e.touches && e.touches.length > 0) {
+    x = e.touches[0].clientX;
+    y = e.touches[0].clientY;
+  } else {
+    x = e.clientX;
+    y = e.clientY;
+  }
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
 }
 function hideCustomMenu() {
   document.getElementById('custom-menu').style.display = 'none';
