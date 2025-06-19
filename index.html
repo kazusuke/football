@@ -935,47 +935,21 @@ function moveToBench(pid, idx) {
   render(idx);
 }
 
-function movePlayersToFormation() {
-  const field = document.getElementById('field');
-  field.innerHTML = '';
-  const formation = document.getElementById('formation').value;
-  const formations = {
-    "442": [
-      {x:180, y:550}, // GK
-      {x:60, y:450}, {x:140, y:450}, {x:220, y:450}, {x:300, y:450}, // DF
-      {x:60, y:300}, {x:140, y:300}, {x:220, y:300}, {x:300, y:300}, // MF
-      {x:120, y:120}, {x:240, y:120} // FW
-    ],
-    "433": [
-      {x:180, y:550}, // GK
-      {x:60, y:450}, {x:140, y:450}, {x:220, y:450}, {x:300, y:450}, // DF
-      {x:100, y:300}, {x:180, y:300}, {x:260, y:300}, // MF
-      {x:60, y:120}, {x:180, y:80}, {x:300, y:120} // FW
-    ],
-    "352": [
-      {x:180, y:550}, // GK
-      {x:100, y:450}, {x:180, y:450}, {x:260, y:450}, // DF
-      {x:60, y:300}, {x:120, y:300}, {x:180, y:300}, {x:240, y:300}, {x:300, y:300}, // MF
-      {x:140, y:120}, {x:220, y:120} // FW
-    ],
-    "4231": [
-      {x:180, y:550}, // GK
-      {x:60, y:450}, {x:140, y:450}, {x:220, y:450}, {x:300, y:450}, // DF
-      {x:120, y:350}, {x:240, y:350}, // DMF
-      {x:60, y:220}, {x:180, y:220}, {x:300, y:220}, // AMF
-      {x:180, y:80} // FW
-    ]
-  };
-  const positions = formations[formation];
-  for (let i = 0; i < positions.length; i++) {
-    const player = document.createElement('div');
-    player.className = 'player';
-    player.style.left = positions[i].x + 'px';
-    player.style.top = positions[i].y + 'px';
-    player.textContent = i === 0 ? 'GK' : i;
-    field.appendChild(player);
-  }
+function movePlayersToFormation(idx) {
+  const state = states[idx-1];
+  let remainInit = FORMATION_4231.map(p=>({...p}));
+  state.playersOnField.forEach(pid=>{
+    let minIdx = 0, minDist = 1e9;
+    for(let i=0;i<remainInit.length;i++) {
+      let d = Math.abs(remainInit[i].x - (state.playerPositions[pid]?.x??50)) + Math.abs(remainInit[i].y - (state.playerPositions[pid]?.y??50));
+      if (d < minDist) { minDist = d; minIdx = i; }
+    }
+    state.playerPositions[pid] = {x: remainInit[minIdx].x, y: remainInit[minIdx].y};
+    remainInit.splice(minIdx,1);
+  });
+  render(idx);
 }
+
 function copyFromUpper() {
   states[1].playersOnField = [...states[0].playersOnField];
   states[1].playerPositions = JSON.parse(JSON.stringify(states[0].playerPositions));
