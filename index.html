@@ -960,5 +960,75 @@ function copyFromUpper() {
 window.addEventListener('resize', renderAll);
 renderAll();
 </script>
+
+<label for="formation">フォーメーション:</label>
+<select id="formation">
+  <option value="442">4-4-2</option>
+  <option value="433">4-3-3</option>
+  <option value="352">3-5-2</option>
+  <option value="4231">4-2-3-1</option>
+</select>
+<button onclick="placePlayers()">近い位置に選手を配置</button>
+<div id="field" style="width:400px; height:600px; background:#4CAF50; position:relative; margin-top:20px; border:2px solid #333;"></div>
+
+<style>
+  .player {
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    border: 2px solid #000;
+    border-radius: 50%;
+    position: absolute;
+    text-align: center;
+    line-height: 40px;
+    font-weight: bold;
+    color: #333;
+  }
+</style>
+<script>
+  const formations = {
+    "442": [
+      {x:180, y:550}, // GK
+      {x:60, y:450}, {x:140, y:450}, {x:220, y:450}, {x:300, y:450}, // DF
+      {x:60, y:300}, {x:140, y:300}, {x:220, y:300}, {x:300, y:300}, // MF
+      {x:120, y:120}, {x:240, y:120} // FW
+    ],
+    "433": [
+      {x:180, y:550}, // GK
+      {x:60, y:450}, {x:140, y:450}, {x:220, y:450}, {x:300, y:450}, // DF
+      {x:100, y:300}, {x:180, y:300}, {x:260, y:300}, // MF
+      {x:60, y:120}, {x:180, y:80}, {x:300, y:120} // FW
+    ],
+    "352": [
+      {x:180, y:550}, // GK
+      {x:100, y:450}, {x:180, y:450}, {x:260, y:450}, // DF
+      {x:60, y:300}, {x:120, y:300}, {x:180, y:300}, {x:240, y:300}, {x:300, y:300}, // MF
+      {x:140, y:120}, {x:220, y:120} // FW
+    ],
+    "4231": [
+      {x:180, y:550}, // GK
+      {x:60, y:450}, {x:140, y:450}, {x:220, y:450}, {x:300, y:450}, // DF
+      {x:120, y:350}, {x:240, y:350}, // DMF
+      {x:60, y:220}, {x:180, y:220}, {x:300, y:220}, // AMF
+      {x:180, y:80} // FW
+    ]
+  };
+
+  function placePlayers() {
+    const field = document.getElementById('field');
+    field.innerHTML = '';
+    const formation = document.getElementById('formation').value;
+    const positions = formations[formation];
+    for (let i = 0; i < positions.length; i++) {
+      const player = document.createElement('div');
+      player.className = 'player';
+      player.style.left = positions[i].x + 'px';
+      player.style.top = positions[i].y + 'px';
+      player.textContent = i === 0 ? 'GK' : i;
+      field.appendChild(player);
+    }
+  }
+</script>
+
 </body>
 </html>
