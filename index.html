@@ -935,57 +935,10 @@ function moveToBench(pid, idx) {
   render(idx);
 }
 
-function movePlayersToFormation(idx) {
-  const state = states[idx-1];
-  let remainInit = FORMATION_4231.map(p=>({...p}));
-  state.playersOnField.forEach(pid=>{
-    let minIdx = 0, minDist = 1e9;
-    for(let i=0;i<remainInit.length;i++) {
-      let d = Math.abs(remainInit[i].x - (state.playerPositions[pid]?.x??50)) + Math.abs(remainInit[i].y - (state.playerPositions[pid]?.y??50));
-      if (d < minDist) { minDist = d; minIdx = i; }
-    }
-    state.playerPositions[pid] = {x: remainInit[minIdx].x, y: remainInit[minIdx].y};
-    remainInit.splice(minIdx,1);
-  });
-  render(idx);
-}
-
-function copyFromUpper() {
-  states[1].playersOnField = [...states[0].playersOnField];
-  states[1].playerPositions = JSON.parse(JSON.stringify(states[0].playerPositions));
-  states[1].suspensionPlayers = [...states[0].suspensionPlayers];
-  render(2);
-}
-
-window.addEventListener('resize', renderAll);
-renderAll();
-</script>
-
-<label for="formation">フォーメーション:</label>
-<select id="formation">
-  <option value="442">4-4-2</option>
-  <option value="433">4-3-3</option>
-  <option value="352">3-5-2</option>
-  <option value="4231">4-2-3-1</option>
-</select>
-<button onclick="placePlayers()">近い位置に選手を配置</button>
-<div id="field" style="width:400px; height:600px; background:#4CAF50; position:relative; margin-top:20px; border:2px solid #333;"></div>
-
-<style>
-  .player {
-    width: 40px;
-    height: 40px;
-    background: #fff;
-    border: 2px solid #000;
-    border-radius: 50%;
-    position: absolute;
-    text-align: center;
-    line-height: 40px;
-    font-weight: bold;
-    color: #333;
-  }
-</style>
-<script>
+function movePlayersToFormation() {
+  const field = document.getElementById('field');
+  field.innerHTML = '';
+  const formation = document.getElementById('formation').value;
   const formations = {
     "442": [
       {x:180, y:550}, // GK
@@ -1013,22 +966,25 @@ renderAll();
       {x:180, y:80} // FW
     ]
   };
-
-  function placePlayers() {
-    const field = document.getElementById('field');
-    field.innerHTML = '';
-    const formation = document.getElementById('formation').value;
-    const positions = formations[formation];
-    for (let i = 0; i < positions.length; i++) {
-      const player = document.createElement('div');
-      player.className = 'player';
-      player.style.left = positions[i].x + 'px';
-      player.style.top = positions[i].y + 'px';
-      player.textContent = i === 0 ? 'GK' : i;
-      field.appendChild(player);
-    }
+  const positions = formations[formation];
+  for (let i = 0; i < positions.length; i++) {
+    const player = document.createElement('div');
+    player.className = 'player';
+    player.style.left = positions[i].x + 'px';
+    player.style.top = positions[i].y + 'px';
+    player.textContent = i === 0 ? 'GK' : i;
+    field.appendChild(player);
   }
-</script>
+}
+function copyFromUpper() {
+  states[1].playersOnField = [...states[0].playersOnField];
+  states[1].playerPositions = JSON.parse(JSON.stringify(states[0].playerPositions));
+  states[1].suspensionPlayers = [...states[0].suspensionPlayers];
+  render(2);
+}
 
+window.addEventListener('resize', renderAll);
+renderAll();
+</script>
 </body>
 </html>
