@@ -138,6 +138,9 @@
       color: #fff;
       text-shadow: 1px 1px 3px #000b;
       margin-top: 4px;
+  /* この行を追加 */
+  text-decoration: none !important;
+  cursor: default !important;      
     }
     .bench-area {
       flex: 1;
@@ -552,8 +555,8 @@ function render(idx) {
       if (Math.abs(dx) > 5 || Math.abs(dy) > 5) clearTimeout(timer);
     }, {passive:false});
     if(idx===1) {
-      div.querySelector('.player-name').style.cursor = "pointer";
-      div.querySelector('.player-name').style.textDecoration = "underline dotted";
+//      div.querySelector('.player-name').style.cursor = "pointer";
+//      div.querySelector('.player-name').style.textDecoration = "underline dotted";
       div.querySelector('.player-name').onclick = ()=>openEditModal(pid);
     }
     field.appendChild(div);
