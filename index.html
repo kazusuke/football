@@ -941,6 +941,27 @@ function moveToBench(pid, idx) {
   render(idx);
 }
 
+// 状態を保存
+function saveStates() {
+  localStorage.setItem('formationStates', JSON.stringify(states));
+}
+
+// 状態を復元
+function loadStates() {
+  const data = localStorage.getItem('formationStates');
+  if (data) {
+    const loaded = JSON.parse(data);
+    // 各プロパティを上書き
+    for (let i = 0; i < states.length; i++) {
+      states[i].playersOnField = loaded[i].playersOnField;
+      states[i].playerPositions = loaded[i].playerPositions;
+      states[i].suspensionPlayers = loaded[i].suspensionPlayers;
+    }
+    renderAll();
+  }
+}
+
+// フォーメーション変更や編集後に保存
 function movePlayersToFormation(idx) {
   const state = states[idx-1];
   let remainInit = FORMATION_4231.map(p=>({...p}));
@@ -954,14 +975,13 @@ function movePlayersToFormation(idx) {
     remainInit.splice(minIdx,1);
   });
   render(idx);
+  saveStates(); // ←追加
 }
 
-function copyFromUpper() {
-  states[1].playersOnField = [...states[0].playersOnField];
-  states[1].playerPositions = JSON.parse(JSON.stringify(states[0].playerPositions));
-  states[1].suspensionPlayers = [...states[0].suspensionPlayers];
-  render(2);
-}
+// 編集やドラッグ＆ドロップ後にもsaveStates()を呼ぶと良い
+
+// ページ読み込み時に復元
+window.addEventListener('DOMContentLoaded', loadStates);
 
 window.addEventListener('resize', renderAll);
 renderAll();
