@@ -715,12 +715,25 @@ function onDropField(e, idx) {
   const field = document.getElementById('field'+idx);
   const fw = field.clientWidth, fh = field.clientHeight;
   const state = states[idx-1];
-  if (dragFrom === 'bench' && state.playersOnField.length <= 11) {
-    state.playersOnField.push(dragPlayerId);
-    let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
-    const p = PLAYERS.find(x=>x.id===dragPlayerId);
-    if (p.positions.includes('GK')) y = 95;
-    state.playerPositions[dragPlayerId] = {x, y};
+  if (dragFrom === 'bench') {
+    if (state.playersOnField.length < 11) {
+      // 11人未満ならそのまま追加
+      state.playersOnField.push(dragPlayerId);
+      let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
+      const p = PLAYERS.find(x=>x.id===dragPlayerId);
+      if (p.positions.includes('GK')) y = 95;
+      state.playerPositions[dragPlayerId] = {x, y};
+    } else if (state.playersOnField.length === 11) {
+      // 11人なら交代モード：一人選んで控えに戻す
+      const outId = state.playersOnField[0]; // 例：一番最初の選手を外す（UIで選ばせる場合は別途実装）
+      state.playersOnField = state.playersOnField.filter(id=>id!==outId);
+      state.playersOnField.push(dragPlayerId);
+      let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
+      const p = PLAYERS.find(x=>x.id===dragPlayerId);
+      if (p.positions.includes('GK')) y = 95;
+      state.playerPositions[dragPlayerId] = {x, y};
+      // outIdを控えに戻す（playerPositionsは残してOK）
+    }
   } else if (dragFrom === 'field') {
     let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
     state.playerPositions[dragPlayerId] = {x, y};
