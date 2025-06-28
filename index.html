@@ -715,12 +715,15 @@ function onDropField(e, idx) {
   const field = document.getElementById('field'+idx);
   const fw = field.clientWidth, fh = field.clientHeight;
   const state = states[idx-1];
-  if (dragFrom === 'bench' && state.playersOnField.length < 11) {
-    state.playersOnField.push(dragPlayerId);
-    let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
-    const p = PLAYERS.find(x=>x.id===dragPlayerId);
-    if (p.positions.includes('GK')) y = 95;
-    state.playerPositions[dragPlayerId] = {x, y};
+  if (dragFrom === 'bench') {
+    // すでにフィールドにいる場合は追加しない
+    if (!state.playersOnField.includes(dragPlayerId) && state.playersOnField.length < 11) {
+      state.playersOnField.push(dragPlayerId);
+      let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
+      const p = PLAYERS.find(x=>x.id===dragPlayerId);
+      if (p.positions.includes('GK')) y = 95;
+      state.playerPositions[dragPlayerId] = {x, y};
+    }
   } else if (dragFrom === 'field') {
     let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
     state.playerPositions[dragPlayerId] = {x, y};
