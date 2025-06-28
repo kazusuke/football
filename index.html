@@ -711,21 +711,26 @@ function onDragEndSuspension(e, idx) {
 // フィールドへのドロップ
 function onDragOverField(e, idx) { e.preventDefault(); }
 function onDropField(e, idx) {
-  e.preventDefault();
-  const field = document.getElementById('field'+idx);
-  const fw = field.clientWidth, fh = field.clientHeight;
-  const state = states[idx-1];
-  if (dragFrom === 'bench' && state.playersOnField.length < 11) {
-    state.playersOnField.push(dragPlayerId);
-    let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
-    const p = PLAYERS.find(x=>x.id===dragPlayerId);
-    if (p.positions.includes('GK')) y = 95;
-    state.playerPositions[dragPlayerId] = {x, y};
-  } else if (dragFrom === 'field') {
-    let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
-    state.playerPositions[dragPlayerId] = {x, y};
-  }
-  render(idx);
+    e.preventDefault();
+    const field = document.getElementById('field' + idx);
+    const fw = field.clientWidth, fh = field.clientHeight;
+    const state = states[idx - 1];
+    if (dragFrom === 'bench') {
+        // すでに11人なら一番古い選手を外す
+        if (state.playersOnField.length >= 11) {
+            const removedId = state.playersOnField.shift();
+            delete state.playerPositions[removedId];
+        }
+        state.playersOnField.push(dragPlayerId);
+        let x = e.offsetX / fw * 100, y = e.offsetY / fh * 100;
+        const p = PLAYERS.find(x => x.id === dragPlayerId);
+        if (p.positions.includes('GK')) y = 95;
+        state.playerPositions[dragPlayerId] = { x, y };
+    } else if (dragFrom === 'field') {
+        let x = e.offsetX / fw * 100, y = e.offsetY / fh * 100;
+        state.playerPositions[dragPlayerId] = { x, y };
+    }
+    render(idx);
 }
 
 // 控えエリアへのドロップ
