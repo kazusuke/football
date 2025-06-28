@@ -948,6 +948,20 @@ function saveStates() {
   localStorage.setItem('formationStates', JSON.stringify(states));
 }
 
+// 上の状態をコピーする関数
+function copyFromUpper() {
+  // states[0]（上のボード）の状態をstates[1]（下のボード）にコピー
+  states[1].playersOnField = [...states[0].playersOnField];
+  states[1].playerPositions = JSON.parse(JSON.stringify(states[0].playerPositions));
+  states[1].suspensionPlayers = [...states[0].suspensionPlayers];
+  
+  // 下のボード（idx=2）を再描画
+  render(2);
+  
+  // 状態を保存
+  saveStates();
+}
+
 // 状態を復元
 function loadStates() {
   const data = localStorage.getItem('formationStates');
