@@ -715,7 +715,7 @@ function onDropField(e, idx) {
   const field = document.getElementById('field'+idx);
   const fw = field.clientWidth, fh = field.clientHeight;
   const state = states[idx-1];
-  if (dragFrom === 'bench' && state.playersOnField.length < 11) {
+  if (dragFrom === 'bench' && state.playersOnField.length < 11) {  // 11人未満の場合のみ追加可能
     state.playersOnField.push(dragPlayerId);
     let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
     const p = PLAYERS.find(x=>x.id===dragPlayerId);
