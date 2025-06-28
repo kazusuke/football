@@ -735,7 +735,6 @@ function onDropBench(e, idx) {
   const state = states[idx-1];
   if (dragFrom === 'field') {
     state.playersOnField = state.playersOnField.filter(id=>id!==dragPlayerId);
-    delete state.playerPositions[dragPlayerId];
   } else if (dragFrom === 'suspension') {
     state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==dragPlayerId);
   }
@@ -870,7 +869,6 @@ document.getElementById('menu-to-bench').onclick = function() {
   const state = states[idx-1];
   if (from === 'field') {
     state.playersOnField = state.playersOnField.filter(id=>id!==pid);
-    delete state.playerPositions[pid];
   } else if (from === 'suspension') {
     state.suspensionPlayers = state.suspensionPlayers.filter(id=>id!==pid);
   }
