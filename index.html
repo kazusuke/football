@@ -33,7 +33,7 @@
       width: 100%;
       max-width: 700px;
       aspect-ratio: 1/1.1;
-      background: linear-gradient(135deg, #27ae60 70%, #145a32 100%);
+      background: #27ae60; /* グラデーションを単色に変更 */
       border: 4px solid #fff;
       border-radius: 18px;
       box-shadow: 0 4px 16px #0002;
@@ -132,14 +132,16 @@
       font-size: 2em;
       font-weight: bold;
       margin: 0 auto;
-      box-shadow: 0 3px 10px #0005;
+      /* box-shadow: 0 3px 10px #0005; ← この行を削除またはコメントアウト */
+      box-shadow: none; /* 黒い縁を消す */
     }
     .player-name {
       text-align: center;
       font-size: 1.8em;
-      font-weight: bold;
+      /* font-weight: bold; ← この行を削除 */
+      font-weight: normal;
       color: #fff;
-      text-shadow: 1px 1px 3px #000b;
+      text-shadow: none; /* 黒い縁を消す */
       margin-top: 4px;
   /* この行を追加 */
   text-decoration: none !important;
@@ -715,7 +717,7 @@ function onDropField(e, idx) {
   const field = document.getElementById('field'+idx);
   const fw = field.clientWidth, fh = field.clientHeight;
   const state = states[idx-1];
-  if (dragFrom === 'bench' && state.playersOnField.length < 11) {
+  if (dragFrom === 'bench') { // ★11人制限を撤廃
     state.playersOnField.push(dragPlayerId);
     let x = e.offsetX/fw*100, y = e.offsetY/fh*100;
     const p = PLAYERS.find(x=>x.id===dragPlayerId);
@@ -980,20 +982,40 @@ function loadStates() {
 // フォーメーション変更や編集後に保存
 function movePlayersToFormation(idx) {
   const state = states[idx-1];
-  let remainInit = FORMATION_4231.map(p=>({...p}));
-  state.playersOnField.forEach(pid=>{
-    let minIdx = 0, minDist = 1e9;
-    for(let i=0;i<remainInit.length;i++) {
-      let d = Math.abs(remainInit[i].x - (state.playerPositions[pid]?.x??50)) + Math.abs(remainInit[i].y - (state.playerPositions[pid]?.y??50));
-      if (d < minDist) { minDist = d; minIdx = i; }
-    }
-    state.playerPositions[pid] = {x: remainInit[minIdx].x, y: remainInit[minIdx].y};
-    remainInit.splice(minIdx,1);
-  });
-  render(idx);
-  saveStates(); // ←追加
-}
+  const formation = FORMATION_4231;
 
+  // 初期配置の座標リスト
+  const formationPositions = formation.map(p => ({ x: p.x, y: p.y }));
+
+  // 現在フィールドにいる選手
+  const fieldPlayers = [...state.playersOnField];
+
+  // 新しいポジション格納用
+  const newPositions = {};
+
+  // 各選手を一番近い初期配置に割り当てる（重複OK）
+  fieldPlayers.forEach(pid => {
+    const curPos = state.playerPositions[pid] || { x: 50, y: 50 };
+    // 最も近い初期配置を探す
+    let minDist = Infinity, nearest = null;
+    formationPositions.forEach(pos => {
+      const dist = Math.hypot(curPos.x - pos.x, curPos.y - pos.y);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = pos;
+      }
+    });
+    // 割り当て
+    if (nearest) {
+      newPositions[pid] = { x: nearest.x, y: nearest.y };
+    }
+  });
+
+  // ポジションを更新
+  state.playerPositions = newPositions;
+  render(idx);
+  saveStates();
+}
 function setFormation442(idx) {
   const state = states[idx-1];
   state.playersOnField = [...FORMATION_442.map(p=>p.id)];
